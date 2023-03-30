@@ -4,6 +4,8 @@ import argparse
 from learning.optimization import run_training_procedure
 from data.dataset_names import ds_names
 from models.model_names import model_names
+from utils.conn_data import save_pickle
+from settings import OUTPUTS_PATH
 
 source_path = os.path.dirname(__file__)
 inputs_path = os.path.join(source_path, "data", "inputs")
@@ -25,3 +27,6 @@ if __name__ == "__main__":
                                      init_steps=args.init_steps,
                                      prediction_steps=args.prediction_steps,
                                      embedd_init_steps=args.embedd_init_steps)
+    
+    save_pickle(path=os.path.join(OUTPUTS_PATH, args.model_name,  "training_results.pickle"),
+                obj=results)
