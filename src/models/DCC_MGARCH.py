@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-class MGARCH_DCC(tf.keras.Model):
+class DCC_MGARCH(tf.keras.Model):
     """
     Tensorflow/Keras implementation of multivariate GARCH under dynamic conditional correlation (DCC) specification.
     Further reading:
