@@ -40,7 +40,6 @@ def run_training_procedure(file,
 
         # get 1:t ts information
         train = returns.iloc[:t]
-        test = returns.iloc[t:(t + prediction_steps)]
 
         # estimate model parameters and compute t+1 predictions
         rcov_tp1 = forecast(returns=train, model=model, model_name=model_name, prediction_steps=prediction_steps)
@@ -56,4 +55,12 @@ def run_training_procedure(file,
 
         idx += 1
     
-    a = 1
+    results = {
+        
+        "rcov": rcovs_true,
+        "predictions": preds,
+        "loss": losses,
+
+        }
+    
+    return results
