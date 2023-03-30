@@ -35,8 +35,7 @@ def run_training_procedure(file,
     idx = 0
 
     preds = losses = torch.zeros(T, k, k)
-    for t in tqdm(range(init_steps, returns.shape[0] - init_steps, prediction_steps),
-                  desc="Running TSCV"):
+    for t in tqdm(range(init_steps, returns.shape[0] - init_steps, prediction_steps), desc="Running forecast procedure"):
 
         # get 1:t ts information
         train = returns.iloc[:t]
