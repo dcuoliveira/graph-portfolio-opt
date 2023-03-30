@@ -42,7 +42,10 @@ def run_training_procedure(file,
         train = returns.iloc[:t]
 
         # estimate model parameters and compute t+1 predictions
-        rcov_tp1 = forecast(returns=train, model=model, model_name=model_name, prediction_steps=prediction_steps)
+        rcov_tp1 = forecast(returns=train, model=model,
+                            model_name=model_name,
+                            prediction_steps=prediction_steps,
+                            ovrd=rvol_proxy_name if model_name == "rw" else None)
 
         # store t+1 realized covariance prediction
         preds[idx] = rcov_tp1
