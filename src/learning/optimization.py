@@ -1,13 +1,31 @@
 import pandas as pd
 from tqdm import tqdm
 
-def run_training_procedure(file, model, init_steps, prediction_steps):
+from utils.realized_vol import compute_rcov
+
+def run_training_procedure(file,
+                           model,
+                           model_name,
+                           rvol_proxy_name,
+                           rvol_proxy_window,
+                           init_steps,
+                           prediction_steps,
+                           embedd_init_steps):
     
     data = pd.read_excel(file)
     
-    # 1. use in-sample data to estimate graph structure
- 
-    # 2. use graph structure and/or time series data to predict realized covariances
+    # 0. prepare dataset
+    data.set_index("date", inplace=True)
+    data = data.dropna()
+
+    # 1. compute realized vol. proxy
+    rcov_data = compute_rcov(data=data, rvol_proxy_name=rvol_proxy_name, rvol_proxy_window=rvol_proxy_window)
+    
+    # 2. use in-sample data to estimate graph embeddings
+    embedd_data = data.iloc[0:embedd_init_steps]
+    data = data.iloc[embedd_init_steps+1:]
+    
+    # 3. use graph structure and/or time series data to predict realized covariances
     rcovs = []
     preds = []
     forecast_errors = []
@@ -15,8 +33,8 @@ def run_training_procedure(file, model, init_steps, prediction_steps):
                   desc="Running TSCV"):
 
         # get 1:t ts information
-        train = data[:t]
-        test = data[t:(t + prediction_steps)]
+        train = data.iloc[:t]
+        test = data.iloc[t:(t + prediction_steps)]
 
         # compute realized covariance
 
