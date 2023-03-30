@@ -19,4 +19,7 @@ dependencies:
   - pyg 
   - pytorch-sparse 
   - jupyterlab
+  - yfinance
+  - matplotlib
+  - openpyxl
 
