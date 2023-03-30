@@ -1,0 +1,22 @@
+name: gnn-popt
+channels:
+  - defaults
+  - conda-forge
+  - pytorch
+  - pyg
+dependencies:
+  - python=3.10.0
+  - pandas
+  - numpy
+  - tqdm
+  - tensorflow
+  - tensorflow-probability
+  - pyg-lib
+  - pygod
+  - pytorch
+  - torchvision 
+  - torchaudio 
+  - pyg 
+  - pytorch-sparse 
+  - jupyterlab
+
