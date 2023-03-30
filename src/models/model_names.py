@@ -5,5 +5,6 @@ DCC_GARCH = mgarch.mgarch()
 
 model_names = {
     "gclstm": GCLSTM,
-    "dcc_garch": DCC_GARCH
+    "dcc_garch": DCC_GARCH,
+    "rw": None,
 }
