@@ -257,7 +257,7 @@ class DCC_MGARCH(tf.keras.Model):
                 sigmas_samp.append(sigma_t)
                 Qs_samp.append(Q_t)
                 
-                ynext = tfp.distributions.MultivariateNormalFullCovariance(self.MU, Sigma_t).sample()
+                ynext = tf.distributions.MultivariateNormalFullCovariance(self.MU, Sigma_t).sample()
                 ys_samp.append(tf.reshape(ynext,(1,1,-1)))
                 sig_samp.append(tf.reshape(sigma_t,(1,1,-1)))
                 R_samp.append(tf.reshape(R_t,(1,1,self.n_dims,self.n_dims)))
@@ -269,3 +269,13 @@ class DCC_MGARCH(tf.keras.Model):
             sigma_samples.append(tf.concat(sig_samp,1))
         
         return tf.concat(y_samples,0).numpy(), tf.concat(R_samples,0).numpy(), tf.concat(sigma_samples,0).numpy()
+    
+
+if __name__ == "__main__":
+    import yfinance as yf
+    data = yf.download("^GDAXI ^GSPC", start="2017-09-10", end="2022-09-10", interval="1d")
+
+    close = data["Close"]
+    returns = np.log(close).diff().dropna()
+
+    a = 1
