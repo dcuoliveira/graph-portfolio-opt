@@ -28,5 +28,8 @@ if __name__ == "__main__":
                                      prediction_steps=args.prediction_steps,
                                      embedd_init_steps=args.embedd_init_steps)
     
+    if not os.path.isdir(os.path.join(OUTPUTS_PATH, args.model_name)):
+        os.mkdir(os.path.join(OUTPUTS_PATH, args.model_name))
+    
     save_pickle(path=os.path.join(OUTPUTS_PATH, args.model_name,  "training_results.pickle"),
                 obj=results)
