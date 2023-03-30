@@ -1,7 +1,8 @@
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 
-class DCC_MGARCH(tf.keras.Model):
+class MGARCH_DCC(tf.keras.Model):
     """
     Tensorflow/Keras implementation of multivariate GARCH under dynamic conditional correlation (DCC) specification.
     Further reading:
@@ -12,7 +13,7 @@ class DCC_MGARCH(tf.keras.Model):
     
     def __init__(self, y):
         """
-        args:
+        Args:
             y: NxM numpy.array of N observations of M correlated time-series
         """
         super().__init__()
@@ -27,17 +28,17 @@ class DCC_MGARCH(tf.keras.Model):
         #by keeping the learning rate low, this should result in admissible results
         #for more complex models, this might not suffice
         self.alpha0 = tf.Variable(np.std(y,0))
-        self.alpha = tf.Variable(tf.zeros(shape=(n_dims,)) + 0.25)
-        self.beta = tf.Variable(tf.zeros(shape=(n_dims,)) + 0.25)
+        self.alpha = tf.Variable(tf.zeros(shape=(n_dims,))+0.25)
+        self.beta = tf.Variable(tf.zeros(shape=(n_dims,))+0.25)
         
         self.L0 = tf.Variable(np.float32(np.linalg.cholesky(np.corrcoef(y.T)))) #decomposition of A_0
-        self.A = tf.Variable(tf.zeros(shape=(1,)) + 0.9)
-        self.B = tf.Variable(tf.zeros(shape=(1,)) + 0.05)
+        self.A = tf.Variable(tf.zeros(shape=(1,))+0.9)
+        self.B = tf.Variable(tf.zeros(shape=(1,))+0.05)
         
            
     def call(self, y):
         """
-        args:
+        Args:
             y: NxM numpy.array of N observations of M correlated time-series
         """
         return self.get_conditional_dists(y)
@@ -46,7 +47,7 @@ class DCC_MGARCH(tf.keras.Model):
     def get_log_probs(self, y):
         """
         Calculate log probabilities for a given matrix of time-series observations
-        args:
+        Args:
             y: NxM numpy.array of N observations of M correlated time-series
         """
         return self.get_conditional_dists(y).log_prob(y)
@@ -56,7 +57,7 @@ class DCC_MGARCH(tf.keras.Model):
     def get_conditional_dists(self, y):
         """
         Calculate conditional distributions for given observations
-        args:
+        Args:
             y: NxM numpy.array of N observations of M correlated time-series
         """
         T = tf.shape(y)[0]
@@ -83,7 +84,7 @@ class DCC_MGARCH(tf.keras.Model):
         alpha0 = self.alpha0**2 #ensure positivity
         alpha = self.alpha
         beta = self.beta
-
+        
         A = self.A
         B = self.B
         
@@ -126,7 +127,7 @@ class DCC_MGARCH(tf.keras.Model):
     def cov_to_corr(self, S):
         """
         Transforms covariance matrix to a correlation matrix via matrix operations
-        args:
+        Args:
             S: Symmetric, positive semidefinite covariance matrix (tf.Tensor)
         """
         D = tf.linalg.LinearOperatorDiag(1/(tf.linalg.diag_part(S)**0.5))
@@ -137,7 +138,7 @@ class DCC_MGARCH(tf.keras.Model):
     def train_step(self, data):
         """
         Custom training step to handle keras model.fit given that there is no input-output structure in our model
-        args:
+        Args:
             S: Symmetric, positive semidefinite covariance matrix (tf.Tensor)
         """
         x,y = data
@@ -156,7 +157,8 @@ class DCC_MGARCH(tf.keras.Model):
     def sample_forecast(self, y, T_forecast = 30, n_samples=500):
         """
         Create forecast samples to use for monte-carlo simulation of quantities of interest about the forecast (e.g. mean, var, corr, etc.)
-        args:
+        WARNING: This is not optimized very much and can take some time to run, probably due to Python's slow loops - can likely be improved
+        Args:
             y: numpy.array of training data, used to initialize the forecast values
             T_forecast: number of periods to predict (integer)
             n_samples: Number of samples to draw (integer)
@@ -257,7 +259,7 @@ class DCC_MGARCH(tf.keras.Model):
                 sigmas_samp.append(sigma_t)
                 Qs_samp.append(Q_t)
                 
-                ynext = tf.distributions.MultivariateNormalFullCovariance(self.MU, Sigma_t).sample()
+                ynext = tfp.distributions.MultivariateNormalFullCovariance(self.MU, Sigma_t).sample()
                 ys_samp.append(tf.reshape(ynext,(1,1,-1)))
                 sig_samp.append(tf.reshape(sigma_t,(1,1,-1)))
                 R_samp.append(tf.reshape(R_t,(1,1,self.n_dims,self.n_dims)))
@@ -269,13 +271,3 @@ class DCC_MGARCH(tf.keras.Model):
             sigma_samples.append(tf.concat(sig_samp,1))
         
         return tf.concat(y_samples,0).numpy(), tf.concat(R_samples,0).numpy(), tf.concat(sigma_samples,0).numpy()
-    
-
-if __name__ == "__main__":
-    import yfinance as yf
-    data = yf.download("^GDAXI ^GSPC", start="2017-09-10", end="2022-09-10", interval="1d")
-
-    close = data["Close"]
-    returns = np.log(close).diff().dropna()
-
-    a = 1
