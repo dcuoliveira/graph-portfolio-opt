@@ -12,7 +12,7 @@ inputs_path = os.path.join(source_path, "data", "inputs")
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--ds_name', type=str, default="etfs", help='Dataset name.')
-parser.add_argument('--model_name', type=str, default="dcc_garch", help='Model name.')
+parser.add_argument('--model_name', type=str, default="rw", help='Model name.')
 parser.add_argument('--rvol_proxy_name', type=str, default="sample_cov", help='Realized vol. proxy name to be computed.')
 parser.add_argument('--init_steps', type=int, default=252, help='Init steps to estimate before predicting.')
 parser.add_argument('--prediction_steps', type=int, default=1, help='Steps ahead to predict.')
