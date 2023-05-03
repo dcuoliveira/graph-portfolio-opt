@@ -1,10 +1,5 @@
-from models.GCLSTM import GCLSTM
-import mgarch
-
-DCC_GARCH = mgarch.mgarch()
+from models.DLPO import DLPO
 
 model_names = {
-    "gclstm": GCLSTM,
-    "dcc_garch": DCC_GARCH,
-    "rw": None,
+    "dlpo": DLPO
 }
