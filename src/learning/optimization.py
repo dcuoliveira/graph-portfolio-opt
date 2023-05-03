@@ -10,10 +10,8 @@ from learning.forecast import forecast
 def run_training_procedure(file,
                            model,
                            model_name,
-                           rvol_proxy_name,
                            init_steps,
-                           prediction_steps,
-                           embedd_init_steps):
+                           prediction_steps):
     
     prices = pd.read_excel(file)
     
