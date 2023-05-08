@@ -57,7 +57,9 @@ if __name__ == "__main__":
     # temporally add repo to path
     sys.path.append(os.path.join(os.getcwd(), "src"))
 
-    from utils.dataset_utils import concatenate_prices_returns, create_rolling_window_array
+    from utils.dataset_utils import create_rolling_window_rets_vol_array, concatenate_prices_returns
+    from utils.conn_data import compute_realized_ewma_vol
+    from loss_functions.SharpeLoss import SharpeLoss
 
     # load data
     source_path = os.path.dirname(os.path.dirname(__file__))
@@ -68,23 +70,29 @@ if __name__ == "__main__":
     prices.set_index("date", inplace=True)
     returns = np.log(prices).diff().dropna()
     prices = prices.loc[returns.index]
-    all_df = concatenate_prices_returns(prices=prices, returns=returns)
+    vols = compute_realized_ewma_vol(returns=returns, window=50, )
+    features = concatenate_prices_returns(prices=prices, returns=returns)
+
+    idx = vols.index
+    returns = returns.loc[idx].values.astype('float32')
+    prices = prices.loc[idx].values.astype('float32')
+    vols = vols.loc[idx].values.astype('float32')
+    features = features.loc[idx].values.astype('float32')  
 
     # scale data
-    timeseries = all_df.values.astype('float32')
     scaler = MinMaxScaler()
-    training_data = scaler.fit_transform(timeseries)
+    training_data = scaler.fit_transform(features)
 
     # hyperparameter
-    input_size = all_df.shape[1]
-    output_size = int(all_df.shape[1] / 2)
+    input_size = features.shape[1]
+    output_size = int(features.shape[1] / 2)
     hidden_size = 2
     num_layers = 1
     learning_rate = 0.01
 
     seq_length = 5
     train_size_perc = 0.6
-    train_size = int(timeseries.shape[0] * train_size_perc)
+    train_size = int(features.shape[0] * train_size_perc)
     batch_size = 10
     n_epochs = 500
     print_every = 10
@@ -96,33 +104,39 @@ if __name__ == "__main__":
                  num_layers=num_layers,
                  batch_first=True)
     
-    # (2) loss fucntions - TODO: need to change it to the sharpe ratio
-    lossfn = torch.nn.MSELoss()
+    # (2) loss fucntions
+    lossfn = SharpeLoss()
 
     # (3) optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     # define arrays of rolling window observations
-    X, y = create_rolling_window_array(data=training_data, seq_length=seq_length)
+    X, returns, vols = create_rolling_window_rets_vol_array(return_prices=features, 
+                                                            returns=returns,
+                                                            vols=vols,
+                                                            seq_length=seq_length)
 
     # define train and test datasets
-    X_train, y_train = X[0:train_size], y[0:train_size]
-    X_test, y_test = X[train_size:], y[train_size:]
+    X_train, returns_train, vols_train = X[0:train_size], returns[0:train_size], vols[0:train_size]
+    X_test, returns_test, vols_test = X[train_size:], returns[train_size:], vols[train_size:]
 
     # define data loaders
-    train_loader = data.DataLoader(data.TensorDataset(X_train, y_train), shuffle=True, batch_size=batch_size)
+    train_loader = data.DataLoader(data.TensorDataset(X_train, returns_train, vols_train), shuffle=True, batch_size=batch_size)
 
     # (4) training procedure
     for epoch in range(n_epochs + print_every):
        
         model.train()
-        for X_batch, y_batch in train_loader:
+        for X_batch, returns_batch, vols_batch in train_loader:
             optimizer.zero_grad()
             # compute forward probagation
-            y_pred = model.forward(X_batch)
+            weights_pred = model.forward(X_batch)
 
             # compute loss
-            loss = lossfn(y_pred, y_batch)
+            loss = lossfn(returns_batch, vols_batch, weights_pred)
+            
+            # gradient ascent
+            loss = loss * -1
             
             # compute gradients and backpropagate
             loss.backward()
