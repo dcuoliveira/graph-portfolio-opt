@@ -9,4 +9,4 @@ class SharpeLoss(nn.Module):
         
         realized_sharpe_ratio = torch.divide(torch.mul(weights, returns), vol)
 
-        return realized_sharpe_ratio
+        return realized_sharpe_ratio.sum()
