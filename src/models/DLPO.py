@@ -53,6 +53,7 @@ if __name__ == "__main__":
     import numpy as np
     from sklearn.preprocessing import MinMaxScaler
     import torch.utils.data as data
+    import matplotlib.pyplot as plt
 
     # temporally add repo to path
     sys.path.append(os.path.join(os.getcwd(), "src"))
@@ -68,9 +69,11 @@ if __name__ == "__main__":
 
     # prepare dataset
     prices.set_index("date", inplace=True)
+    prices = prices.shift(-1)
+
     returns = np.log(prices).diff().dropna()
     prices = prices.loc[returns.index]
-    vols = compute_realized_ewma_vol(returns=returns, window=50, )
+    vols = compute_realized_ewma_vol(returns=returns, window=50)
     features = concatenate_prices_returns(prices=prices, returns=returns)
 
     idx = vols.index
@@ -79,6 +82,11 @@ if __name__ == "__main__":
     vols = vols.loc[idx].values.astype('float32')
     features = features.loc[idx].values.astype('float32')  
 
+    if returns.shape[0] == prices.shape[0] == vols.shape[0] == features.shape[0]:
+        pass
+    else:
+        raise Exception("Some of the arrays have different sizes")
+
     # scale data
     scaler = MinMaxScaler()
     training_data = scaler.fit_transform(features)
@@ -86,7 +94,7 @@ if __name__ == "__main__":
     # hyperparameter
     input_size = features.shape[1]
     output_size = int(features.shape[1] / 2)
-    hidden_size = 2
+    hidden_size = 64
     num_layers = 1
     learning_rate = 0.01
 
@@ -124,10 +132,12 @@ if __name__ == "__main__":
     train_loader = data.DataLoader(data.TensorDataset(X_train, returns_train, vols_train), shuffle=True, batch_size=batch_size)
 
     # (4) training procedure
+    training_loss_values = []
     for epoch in range(n_epochs + print_every):
        
         model.train()
         for X_batch, returns_batch, vols_batch in train_loader:
+
             optimizer.zero_grad()
             # compute forward probagation
             weights_pred = model.forward(X_batch)
@@ -143,7 +153,17 @@ if __name__ == "__main__":
             optimizer.step()
 
         if epoch % print_every == 0:
-            print("Epoch: %d, loss: %1.5f" % (epoch, loss.item()))
+            print("Epoch: %d, loss: %1.5f" % (epoch, loss.item() * -1))
+            training_loss_values.append(loss.item() * -1)
+    
+    training_loss_df = pd.DataFrame(training_loss_values, columns=["sharpe_ratio"])
+
+    print("Average training sharpe {}".format(training_loss_df.mean().item()))
+
+    training_loss_df.hist(bins=10)
+    plt.show()
+
+    end = 1
 
 
 

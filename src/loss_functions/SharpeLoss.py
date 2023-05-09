@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import numpy as np
 
 class SharpeLoss(nn.Module):
     def __init__(self):
@@ -9,4 +10,4 @@ class SharpeLoss(nn.Module):
         
         realized_sharpe_ratio = torch.divide(torch.mul(weights, returns), vol)
 
-        return realized_sharpe_ratio.sum()
+        return realized_sharpe_ratio.sum() * np.sqrt(252)
