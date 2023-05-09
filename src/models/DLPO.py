@@ -96,9 +96,9 @@ if __name__ == "__main__":
     output_size = int(features.shape[1] / 2)
     hidden_size = 64
     num_layers = 1
-    learning_rate = 0.01
+    learning_rate = 0.001
 
-    seq_length = 5
+    seq_length = 30
     train_size_perc = 0.6
     train_size = int(features.shape[0] * train_size_perc)
     batch_size = 10
@@ -119,34 +119,30 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     # define arrays of rolling window observations
-    X, returns, vols = create_rolling_window_rets_vol_array(return_prices=features, 
-                                                            returns=returns,
-                                                            vols=vols,
-                                                            seq_length=seq_length)
+    X, prices = create_rolling_window_rets_vol_array(return_prices=features, 
+                                                     prices=prices,
+                                                     seq_length=seq_length)
 
     # define train and test datasets
-    X_train, returns_train, vols_train = X[0:train_size], returns[0:train_size], vols[0:train_size]
-    X_test, returns_test, vols_test = X[train_size:], returns[train_size:], vols[train_size:]
+    X_train, prices_train = X[0:train_size], prices[0:train_size]
+    X_test, prices_test = X[train_size:], prices[train_size:]
 
     # define data loaders
-    train_loader = data.DataLoader(data.TensorDataset(X_train, returns_train, vols_train), shuffle=True, batch_size=batch_size)
+    train_loader = data.DataLoader(data.TensorDataset(X_train, prices_train), shuffle=True, batch_size=batch_size)
 
     # (4) training procedure
     training_loss_values = []
     for epoch in range(n_epochs + print_every):
        
         model.train()
-        for X_batch, returns_batch, vols_batch in train_loader:
+        for X_batch, prices_batch in train_loader:
 
             optimizer.zero_grad()
             # compute forward probagation
             weights_pred = model.forward(X_batch)
 
             # compute loss
-            loss = lossfn(returns_batch, vols_batch, weights_pred)
-            
-            # gradient ascent
-            loss = loss * -1
+            loss = lossfn(prices_batch, weights_pred, ascent=True)
             
             # compute gradients and backpropagate
             loss.backward()

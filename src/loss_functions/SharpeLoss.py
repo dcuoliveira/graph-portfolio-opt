@@ -6,8 +6,15 @@ class SharpeLoss(nn.Module):
     def __init__(self):
         super().__init__()
 
-    def forward(self, returns, vol, weights):
+    def forward(self, prices, weights, ascent=True):
         
-        realized_sharpe_ratio = torch.divide(torch.mul(weights, returns), vol)
+        # portfolio values
+        portfolio_values = torch.mul(weights, prices)
 
-        return realized_sharpe_ratio.sum() * np.sqrt(252)
+        # portfolio returns
+        portfolio_returns = (portfolio_values[1:] - portfolio_values[:-1]) / portfolio_values[:-1]
+
+        # portfolio sharpe
+        sharpe_ratio = torch.mean(portfolio_returns) / torch.std(portfolio_returns)
+
+        return sharpe_ratio * (-1 if ascent else 1)
