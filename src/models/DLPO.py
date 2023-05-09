@@ -40,7 +40,7 @@ class DLPO(nn.Module):
         # linear aggregate hidden states to match output
         o2t = self.linear(ht)
 
-        # apply softmax function to respect the contraint $w \in [0, \inf]$
+        # apply softmax function to respect the contraint $w_i \in [0, 1]$
         wt = self.softmax(o2t)
 
         return wt
