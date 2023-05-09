@@ -2,30 +2,26 @@ import pandas as pd
 import torch
 
 
-def create_rolling_window_rets_vol_array(return_prices, returns, vols, seq_length):
+def create_rolling_window_rets_vol_array(return_prices, prices, seq_length):
     
     return_prices_out = []
-    returns_out = []
-    vols_out = []
+    prices_out = []
     for i in range(len(return_prices) - seq_length - 1):
 
         # features
         return_prices_tmp = return_prices[i:(i + seq_length)]
 
         # targets
-        returns_tmp = returns[(i + seq_length)]
-        vols_tmp = vols[(i + seq_length)]
+        prices_tmp = prices[(i + seq_length)]
 
         # append all
         return_prices_out.append(return_prices_tmp)
-        returns_out.append(returns_tmp)
-        vols_out.append(vols_tmp)
+        prices_out.append(prices_tmp)
 
     return_prices_out = torch.Tensor(return_prices_out)
-    returns_out = torch.Tensor(returns_out)
-    vols_out = torch.Tensor(vols_out)
+    prices_out = torch.Tensor(prices_out)
 
-    return return_prices_out, returns_out, vols_out
+    return return_prices_out, prices_out
 
 def create_rolling_window_array(data, seq_length):
     
