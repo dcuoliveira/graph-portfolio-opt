@@ -1,6 +1,11 @@
 import torch.nn as nn
 import torch
 
+"""
+Implementation of the LSTM version of the deep learning for 
+portfolio optimization from https://arxiv.org/abs/2005.13665
+"""
+
 class DLPO(nn.Module):
     def __init__(self,
                  input_size,
@@ -45,7 +50,7 @@ class DLPO(nn.Module):
 
         return wt
     
-DEBUG = True
+DEBUG = False
 
 if __name__ == "__main__":
     if DEBUG:
