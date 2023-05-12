@@ -139,9 +139,9 @@ if __name__ == "__main__":
 
         # (4) training procedure
         training_loss_values = []
+        model.train()
         for epoch in range(n_epochs + print_every):
         
-            model.train()
             for X_batch, prices_batch in train_loader:
 
                 optimizer.zero_grad()
@@ -166,7 +166,6 @@ if __name__ == "__main__":
         training_loss_df.hist(bins=10)
         plt.show()
 
-        end = 1
-
+        model.eval()
 
 
