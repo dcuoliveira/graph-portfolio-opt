@@ -51,7 +51,9 @@ if __name__ == "__main__":
         import sys
         import os
         from torch_geometric_temporal.signal import temporal_signal_split
-        
+        import pandas as pd
+        import matplotlib.pyplot as plt
+
         # temporally add repo to path
         sys.path.append(os.path.join(os.getcwd(), "src"))
 
@@ -63,10 +65,12 @@ if __name__ == "__main__":
         hidden_size = 64
         prediction_steps = 1
         train_size_perc = 0.6
+        seq_length = 90
+        print_every = 10
 
         # build dataset loader, and its train/test split
         loader = ETFsZZR()
-        dataset = loader.get_dataset(num_timesteps_in=10, num_timesteps_out=1)
+        dataset = loader.get_dataset(num_timesteps_in=seq_length, num_timesteps_out=prediction_steps)
         train_loader, test_loader = temporal_signal_split(dataset, train_ratio=train_size_perc)
 
         # (1) define model
@@ -77,3 +81,34 @@ if __name__ == "__main__":
 
         # (3) define optimizer
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+        # (4) training procedure
+        training_loss_values = []
+        model.train()
+        for epoch in range(10): 
+
+            for grap_data_batch in train_loader:
+                
+                optimizer.zero_grad()
+                # Get model predictions
+                weights_pred = model(grap_data_batch.x, grap_data_batch.edge_index)
+                
+                # compute loss
+                loss = lossfn(grap_data_batch.y, weights_pred, ascent=True)
+
+                # compute gradients and backpropagate
+                loss.backward()
+                optimizer.step()
+            
+            if epoch % print_every == 0:
+                print("Epoch: %d, loss: %1.5f" % (epoch, loss.item() * -1))
+                training_loss_values.append(loss.item() * -1)
+
+        training_loss_df = pd.DataFrame(training_loss_values, columns=["sharpe_ratio"])
+
+        print("Average training sharpe {}".format(training_loss_df.mean().item()))
+
+        training_loss_df.hist(bins=10)
+        plt.show()
+
+        model.eval()
