@@ -8,7 +8,7 @@ class TGCNPO(nn.Module):
     def __init__(self,
                  in_channels,
                  out_channels,
-                 prediction_steps):
+                 output_size):
         """
         TGCN applied to portfolio optimization.
 
@@ -22,13 +22,17 @@ class TGCNPO(nn.Module):
 
         super().__init__()
 
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.output_size = output_size
+
         # Temporal Graph Convolutional Network
         self.tgcn = TGCN(in_channels=in_channels, 
-                         out_channels=out_channels, 
-                         periods=prediction_steps)
+                         out_channels=out_channels)
         
         # Equals single-shot prediction
-        self.linear = torch.nn.Linear(out_channels, periods)
+        self.linear = nn.Linear(out_channels, output_size)
+        self.softmax = nn.Softmax(1)
 
     def forward(self, x, edge_index):
         """
@@ -39,12 +43,18 @@ class TGCNPO(nn.Module):
         :type edge_index: torch tensor
         """
 
+        # x: (num_nodes, num_feeatures, T)
+        # edge_index: (2, num_nonzero_adj_entries)
         h = self.tgcn(x, edge_index)
         h = F.relu(h)
         h = self.linear(h)
-        return h
 
-DEBUG = False
+        # apply softmax function to respect the contraint $w_i \in [0, 1]$
+        w = self.softmax(h)
+
+        return w
+
+DEBUG = True
 
 if __name__ == "__main__":
     if DEBUG:
@@ -63,10 +73,12 @@ if __name__ == "__main__":
         # hyperparameter
         learning_rate = 1e-3
         hidden_size = 64
-        prediction_steps = 1
+        output_size = 4
         train_size_perc = 0.6
         seq_length = 90
+        prediction_steps = 1
         print_every = 10
+        n_epochs = 500
 
         # build dataset loader, and its train/test split
         loader = ETFsZZR()
@@ -74,7 +86,7 @@ if __name__ == "__main__":
         train_loader, test_loader = temporal_signal_split(dataset, train_ratio=train_size_perc)
 
         # (1) define model
-        model = TGCNPO(in_channels=2, out_channels=hidden_size, prediction_steps=prediction_steps)
+        model = TGCNPO(in_channels=2, out_channels=hidden_size, output_size=output_size)
 
         # (2) define loss function
         lossfn = SharpeLoss()
@@ -85,16 +97,16 @@ if __name__ == "__main__":
         # (4) training procedure
         training_loss_values = []
         model.train()
-        for epoch in range(10): 
+        for epoch in range(n_epochs + print_every): 
 
-            for grap_data_batch in train_loader:
+            for graph_data_batch in train_loader:
                 
                 optimizer.zero_grad()
-                # Get model predictions
-                weights_pred = model(grap_data_batch.x, grap_data_batch.edge_index)
+                # compute forward probagation
+                weights_pred = model(graph_data_batch.x, graph_data_batch.edge_index)
                 
                 # compute loss
-                loss = lossfn(grap_data_batch.y, weights_pred, ascent=True)
+                loss = lossfn(graph_data_batch.y, weights_pred, ascent=True)
 
                 # compute gradients and backpropagate
                 loss.backward()
