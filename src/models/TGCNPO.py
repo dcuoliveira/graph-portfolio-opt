@@ -106,14 +106,14 @@ if __name__ == "__main__":
                 weights_pred = model(graph_data_batch.x.T, graph_data_batch.edge_index)
                 
                 # compute loss
-                loss = lossfn(graph_data_batch.y, weights_pred, ascent=True)
+                loss = lossfn(graph_data_batch.y.T, weights_pred, ascent=True)
 
                 # compute gradients and backpropagate
                 loss.backward()
                 optimizer.step()
             
             if epoch % print_every == 0:
-                print("Epoch: %d, loss: %1.5f" % (epoch, loss.item() * -1))
+                print("Epoch: %d, sharpe (loss): %1.5f" % (epoch, loss.item() * -1))
                 training_loss_values.append(loss.item() * -1)
 
         training_loss_df = pd.DataFrame(training_loss_values, columns=["sharpe_ratio"])
