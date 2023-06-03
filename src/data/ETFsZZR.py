@@ -65,8 +65,8 @@ class ETFsZZR(object):
 
         # outputs
         self.A = A
-        self.X = X
-        self.y = y
+        self.X = X.reshape(X.shape[0] * X.shape[1], X.shape[2])
+        self.y = y.reshape(y.shape[0] * y.shape[1], y.shape[2])
 
     def _get_edges_and_weights(self):
         edge_indices, values = dense_to_sparse(self.A)
@@ -86,14 +86,14 @@ class ETFsZZR(object):
         """
         indices = [
             (i, i + (num_timesteps_in + num_timesteps_out))
-            for i in range(self.X.shape[2] - (num_timesteps_in + num_timesteps_out) + 1)
+            for i in range(self.X.shape[1] - (num_timesteps_in + num_timesteps_out) + 1)
         ]
 
         # Generate observations
         features, target = [], []
         for i, j in indices:
-            features.append((self.X[:, :, i : i + num_timesteps_in]).numpy())
-            target.append((self.y[:, 0, i + num_timesteps_in : j]).numpy())
+            features.append((self.X[:, i : i + num_timesteps_in]).numpy())
+            target.append((self.y[:, i : i + num_timesteps_in]).numpy())
 
         self.features = features
         self.targets = target
