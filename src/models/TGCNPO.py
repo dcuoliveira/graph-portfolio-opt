@@ -43,7 +43,7 @@ class TGCNPO(nn.Module):
         :type edge_index: torch tensor
         """
 
-        # x: (num_nodes, num_feeatures, T)
+        # x: (num_nodes, num_features, T)
         # edge_index: (2, num_nonzero_adj_entries)
         h = self.tgcn(x, edge_index)
         h = F.relu(h)
@@ -86,7 +86,7 @@ if __name__ == "__main__":
         train_loader, test_loader = temporal_signal_split(dataset, train_ratio=train_size_perc)
 
         # (1) define model
-        model = TGCNPO(in_channels=2, out_channels=hidden_size, output_size=output_size)
+        model = TGCNPO(in_channels=8, out_channels=hidden_size, output_size=output_size)
 
         # (2) define loss function
         lossfn = SharpeLoss()
@@ -103,7 +103,7 @@ if __name__ == "__main__":
                 
                 optimizer.zero_grad()
                 # compute forward probagation
-                weights_pred = model(graph_data_batch.x, graph_data_batch.edge_index)
+                weights_pred = model(graph_data_batch.x.T, graph_data_batch.edge_index)
                 
                 # compute loss
                 loss = lossfn(graph_data_batch.y, weights_pred, ascent=True)
