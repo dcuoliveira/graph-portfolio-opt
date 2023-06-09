@@ -50,7 +50,7 @@ class DLPO(nn.Module):
 
         return wt
     
-DEBUG = False
+DEBUG = True
 
 if __name__ == "__main__":
     if DEBUG:
@@ -80,16 +80,14 @@ if __name__ == "__main__":
 
         returns = np.log(prices).diff().dropna()
         prices = prices.loc[returns.index]
-        vols = compute_realized_ewma_vol(returns=returns, window=50)
         features = concatenate_prices_returns(prices=prices, returns=returns)
 
-        idx = vols.index
+        idx = features.index
         returns = returns.loc[idx].values.astype('float32')
         prices = prices.loc[idx].values.astype('float32')
-        vols = vols.loc[idx].values.astype('float32')
         features = features.loc[idx].values.astype('float32')  
 
-        if returns.shape[0] == prices.shape[0] == vols.shape[0] == features.shape[0]:
+        if returns.shape[0] == prices.shape[0] == features.shape[0]:
             pass
         else:
             raise Exception("Some of the arrays have different sizes")
@@ -127,8 +125,8 @@ if __name__ == "__main__":
 
         # define arrays of rolling window observations
         X, prices = create_rolling_window_rets_vol_array(return_prices=features, 
-                                                        prices=prices,
-                                                        seq_length=seq_length)
+                                                         prices=prices,
+                                                         seq_length=seq_length)
 
         # define train and test datasets
         X_train, prices_train = X[0:train_size], prices[0:train_size]
@@ -145,7 +143,7 @@ if __name__ == "__main__":
             for X_batch, prices_batch in train_loader:
 
                 optimizer.zero_grad()
-                # compute forward probagation
+                # compute forward propagation
                 weights_pred = model.forward(X_batch)
 
                 # compute loss
