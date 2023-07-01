@@ -1,9 +1,10 @@
-name: gnn-popt
+name: graph-popt
 channels:
   - defaults
   - conda-forge
   - pytorch
   - pyg
+  - pip
 dependencies:
   - python=3.10.0
   - pandas
@@ -23,4 +24,6 @@ dependencies:
   - matplotlib
   - openpyxl
   - ipywidgets
-
+  - pip:
+    - torch-geometric
+    - torch-geometric-temporal
