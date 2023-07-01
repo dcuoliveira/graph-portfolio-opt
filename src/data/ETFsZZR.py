@@ -49,7 +49,7 @@ class ETFsZZR(object):
             X[i, 1, :] = torch.from_numpy(returns.loc[:, returns.columns[i]].values)
 
             # target
-            y[i, :] = torch.from_numpy(returns.loc[:, returns.columns[i]].values)
+            y[i, :] = torch.from_numpy(prices.loc[:, prices.columns[i]].values)
         
         # create fully connected adjaneccny matrix
         A = torch.ones(num_nodes, num_nodes)
