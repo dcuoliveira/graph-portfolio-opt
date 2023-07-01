@@ -2,8 +2,8 @@ import os
 import numpy as np
 import torch
 import pandas as pd
-
-from utils.dataset_utils import concatenate_prices_returns
+import torch.utils.data as data
+from torch_geometric_temporal.signal import temporal_signal_split
 
 from torch_geometric.utils import dense_to_sparse
 from torch_geometric_temporal.signal import StaticGraphTemporalSignal
@@ -18,55 +18,45 @@ class ETFsZZR(object):
     
     """
     
-    def __init__(self,):
+    def __init__(self):
         super().__init__()
         self._read_data()
 
     def _read_data(self):
-
         prices = pd.read_excel(os.path.join(os.path.dirname(__file__), "inputs", "etfs-zhang-zohren-roberts.xlsx"))
 
         # prepare dataset
         prices.set_index("date", inplace=True)
-        prices = prices.shift(-1)
 
         # compute returns and subset data
         returns = np.log(prices).diff().dropna()
-        prices = prices.loc[returns.index].values.astype('float32')
-        returns = returns.values.astype('float32')
 
-        # TODO: scale data
+        # sanity check
+        idx = returns.dropna().index
+        returns = returns.loc[idx]
+        prices = prices.loc[idx]
 
-        # fully connected adjaneccny matrix
-        A = torch.ones(prices.shape[1], prices.shape[1])
+        # create tensor with (num_nodes, num_features_per_node, num_timesteps)
+        num_nodes = prices.shape[1]
+        num_features_per_node = 2
+        num_timesteps = prices.shape[0]
 
-        # features array
-        X = torch.zeros(prices.shape[0], prices.shape[1], 2)
-        for i in range(prices.shape[1]):
-             # fix dimensios
-            prices_tmp = torch.tensor(prices[:, i]).reshape(prices.shape[0], 1)
-            returns_tmp = torch.tensor(returns[:, i]).reshape(returns.shape[0], 1)
+        X = torch.zeros(num_nodes, num_features_per_node, num_timesteps)
+        y = torch.zeros(num_nodes, num_timesteps)
+        for i in range(num_nodes):
+            # features
+            X[i, 0, :] = torch.from_numpy(prices.loc[:, prices.columns[i]].values)
+            X[i, 1, :] = torch.from_numpy(returns.loc[:, returns.columns[i]].values)
 
-            # stack prices and returns
-            X[:, i, :] = torch.hstack((prices_tmp, returns_tmp))
+            # target
+            y[i, :] = torch.from_numpy(returns.loc[:, returns.columns[i]].values)
+        
+        # create fully connected adjaneccny matrix
+        A = torch.ones(num_nodes, num_nodes)
 
-        # features array
-        y = torch.zeros(prices.shape[0], prices.shape[1], 1)
-        for i in range(prices.shape[1]):
-             # fix dimensios
-            prices_tmp = torch.tensor(prices[:, i]).reshape(prices.shape[0], 1)
-
-            # stack prices and returns
-            y[:, i, :] = prices_tmp
-
-        # reshape all
-        X = X.reshape((X.shape[1], X.shape[2], X.shape[0]))
-        y = y.reshape((y.shape[1], y.shape[2], y.shape[0]))
-
-        # outputs
         self.A = A
-        self.X = X.reshape(X.shape[0] * X.shape[1], X.shape[2])
-        self.y = y.reshape(y.shape[0] * y.shape[1], y.shape[2])
+        self.X = X
+        self.y = y
 
     def _get_edges_and_weights(self):
         edge_indices, values = dense_to_sparse(self.A)
@@ -75,43 +65,34 @@ class ETFsZZR(object):
         self.edges = edge_indices
         self.edge_weights = values
 
-    def _generate_task(self, num_timesteps_in: int = 12, num_timesteps_out: int = 12):
-        """
-        Uses the node features of the graph and generates a feature/target relationship
-        of the shape (num_nodes, num_node_features, num_timesteps_in) -> (num_nodes, num_timesteps_out).
-
-        Args:
-            num_timesteps_in (int): number of timesteps the sequence model sees
-            num_timesteps_out (int): number of timesteps the sequence model has to predict
-        """
+    def _generate_task(self,  num_timesteps_in: int = 12, num_timesteps_out: int = 12):
         indices = [
             (i, i + (num_timesteps_in + num_timesteps_out))
-            for i in range(self.X.shape[1] - (num_timesteps_in + num_timesteps_out) + 1)
+            for i in range(self.X.shape[2] - (num_timesteps_in + num_timesteps_out) + 1)
         ]
 
         # Generate observations
         features, target = [], []
         for i, j in indices:
-            features.append((self.X[:, i : i + num_timesteps_in]).numpy())
-            target.append((self.y[:, i : i + num_timesteps_in]).numpy())
+            features.append((self.X[:, :, i : i + num_timesteps_in]).numpy())
+            target.append((self.y[:, i + num_timesteps_in : j]).numpy())
 
         self.features = features
         self.targets = target
 
-    def get_dataset(self,
-                    num_timesteps_in: int = 12,
-                    num_timesteps_out: int = 12) -> StaticGraphTemporalSignal:
-        """
-        Returns data iterator for Zhang, Zohren, and Roberts (2021) ETFs dataset
-        as an instance of the static graph temporal signal class.
-
-        
-        """
+    def get_dataset(self, num_timesteps_in: int = 12, num_timesteps_out: int = 12) -> StaticGraphTemporalSignal:
         self._get_edges_and_weights()
         self._generate_task(num_timesteps_in, num_timesteps_out)
         dataset = StaticGraphTemporalSignal(self.edges,
                                             self.edge_weights,
                                             self.features,
                                             self.targets)
-
+        
         return dataset
+    
+DEBUG = False
+
+if __name__ == "__main__":
+    if DEBUG:
+        loader = ETFsZZR()
+        dataset = loader.get_dataset(num_timesteps_in=12, num_timesteps_out=12)
