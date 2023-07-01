@@ -2,8 +2,6 @@ import os
 import numpy as np
 import torch
 import pandas as pd
-import torch.utils.data as data
-from torch_geometric_temporal.signal import temporal_signal_split
 
 from torch_geometric.utils import dense_to_sparse
 from torch_geometric_temporal.signal import StaticGraphTemporalSignal
@@ -66,12 +64,14 @@ class ETFsZZR(object):
         self.edge_weights = values
 
     def _generate_task(self,  num_timesteps_in: int = 12, num_timesteps_out: int = 12):
+
+        # generate rolling window indices
         indices = [
             (i, i + (num_timesteps_in + num_timesteps_out))
             for i in range(self.X.shape[2] - (num_timesteps_in + num_timesteps_out) + 1)
         ]
 
-        # Generate observations
+        # use rolling window indices to subset data
         features, target = [], []
         for i, j in indices:
             features.append((self.X[:, :, i : i + num_timesteps_in]).numpy())
