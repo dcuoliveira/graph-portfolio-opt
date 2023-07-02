@@ -1,42 +1,54 @@
 import pandas as pd
 import torch
 
-
-def create_rolling_window_rets_vol_array(return_prices, prices, seq_length):
+def create_rolling_indices(num_timesteps_in, num_timesteps_out, n_timesteps):
     
-    return_prices_out = []
-    prices_out = []
-    for i in range(len(return_prices) - seq_length - 1):
+    # generate rolling window indices
+    indices = [
+        (i, i + (num_timesteps_in + num_timesteps_out))
+        for i in range(n_timesteps - (num_timesteps_in + num_timesteps_out) + 1)
+    ]
 
-        # features
-        return_prices_tmp = return_prices[i:(i + seq_length)]
+    return indices
 
-        # targets
-        prices_tmp = prices[(i + seq_length)]
-
-        # append all
-        return_prices_out.append(return_prices_tmp)
-        prices_out.append(prices_tmp)
-
-    return_prices_out = torch.Tensor(return_prices_out)
-    prices_out = torch.Tensor(prices_out)
-
-    return return_prices_out, prices_out
-
-def create_rolling_window_array(data, seq_length):
+def create_rolling_window_ts(target, features, num_timesteps_in, num_timesteps_out):
     
-    X = []
-    y = []
-    for i in range(len(data) - seq_length - 1):
-        _X = data[i:(i + seq_length)]
-        _y = data[(i + seq_length)]
-        X.append(_X)
-        y.append(_y)
+    if features.shape[0] != target.shape[0]:
+        raise Exception("Features and target must have the same number of timesteps")
 
-    y_out = torch.Tensor(y)
-    X_out = torch.Tensor(X)
+    n_timesteps = features.shape[0]
+    indices = create_rolling_indices(num_timesteps_in=num_timesteps_in,
+                                     num_timesteps_out=num_timesteps_out,
+                                     n_timesteps=n_timesteps)
 
-    return X_out, y_out
+    # use rolling window indices to subset data
+    window_features, window_target = torch.zeros((len(indices), num_timesteps_in, features.shape[1])), torch.zeros((len(indices), num_timesteps_out, target.shape[1]))
+    batch = 0
+    for i, j in indices:
+        window_features[batch, :, :] = torch.tensor(features[i : i + num_timesteps_in, :])
+        window_target[batch, :, :] = torch.tensor(target[ i + num_timesteps_in : j, :])
+
+        batch += 1
+
+    return window_features, window_target
+
+def create_rolling_window_ts_for_graphs(target, features, num_timesteps_in, num_timesteps_out):
+    
+    if features.shape[-1] != target.shape[-1]:
+        raise Exception("Features and target must have the same number of timesteps")
+
+    n_timesteps = features.shape[2]
+    indices = create_rolling_indices(num_timesteps_in=num_timesteps_in,
+                                     num_timesteps_out=num_timesteps_out,
+                                     n_timesteps=n_timesteps)
+
+    # use rolling window indices to subset data
+    window_features, window_target = [], []
+    for i, j in indices:
+        window_features.append((features[:, :, i : i + num_timesteps_in]).numpy())
+        window_target.append((target[:, i + num_timesteps_in : j]).numpy())
+
+    return window_features, window_target
 
 def concatenate_prices_returns(prices, returns):
     prices_names = list(prices.columns)
