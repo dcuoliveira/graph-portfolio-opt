@@ -5,7 +5,7 @@ import pandas as pd
 
 from torch_geometric.utils import dense_to_sparse
 from torch_geometric_temporal.signal import StaticGraphTemporalSignal
-
+from utils.dataset_utils import create_rolling_window_ts_for_graphs
 
 class ETFsZZR(object):
     """
@@ -65,17 +65,10 @@ class ETFsZZR(object):
 
     def _generate_task(self,  num_timesteps_in: int = 12, num_timesteps_out: int = 12):
 
-        # generate rolling window indices
-        indices = [
-            (i, i + (num_timesteps_in + num_timesteps_out))
-            for i in range(self.X.shape[2] - (num_timesteps_in + num_timesteps_out) + 1)
-        ]
-
-        # use rolling window indices to subset data
-        features, target = [], []
-        for i, j in indices:
-            features.append((self.X[:, :, i : i + num_timesteps_in]).numpy())
-            target.append((self.y[:, i + num_timesteps_in : j]).numpy())
+        features, target = create_rolling_window_ts_for_graphs(target=self.y,
+                                                               features=self.X,
+                                                               num_timesteps_in=num_timesteps_in,
+                                                               num_timesteps_out=num_timesteps_out)
 
         self.features = features
         self.targets = target
