@@ -41,7 +41,7 @@ parser.add_argument('-mn',
                     '--model_name',
                     type=str,
                     help='model name to be used for saving the model',
-                    default=1)
+                    default="dlpo")
 
 args = parser.parse_args()
 
