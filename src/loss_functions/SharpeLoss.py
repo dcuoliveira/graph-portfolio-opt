@@ -44,10 +44,11 @@ if __name__ == "__main__":
         prices.set_index("date", inplace=True)
         returns = np.log(prices).diff().dropna()
         prices = prices.loc[returns.index]
-        features = concatenate_prices_returns(prices=prices, returns=returns)
+        features, names = concatenate_prices_returns(prices=prices, returns=returns)
+        features = features.shift(+1).dropna()
         idx = features.index
-        returns = returns.loc[idx].values.astype('float32')
-        prices = prices.loc[idx].values.astype('float32')
+        returns = returns[names].loc[idx].values.astype('float32')
+        prices = prices[names].loc[idx].values.astype('float32')
         features = features.loc[idx].values.astype('float32')  
 
         # define train and test datasets

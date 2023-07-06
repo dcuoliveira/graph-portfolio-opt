@@ -72,7 +72,7 @@ def concatenate_prices_returns(prices, returns):
         all.append(returns[[name]].rename(columns={name: "{} ret".format(name)}))
     all_df = pd.concat(all, axis=1)
 
-    return all_df
+    return all_df, names
 
 DEBUG = False
 
@@ -96,10 +96,10 @@ if __name__ == "__main__":
         prices.set_index("date", inplace=True)
         returns = np.log(prices).diff().dropna()
         prices = prices.loc[returns.index]
-        features = concatenate_prices_returns(prices=prices, returns=returns)
+        features, names = concatenate_prices_returns(prices=prices, returns=returns)
         idx = features.index
-        returns = returns.loc[idx].values.astype('float32')
-        prices = prices.loc[idx].values.astype('float32')
+        returns = returns[names].loc[idx].values.astype('float32')
+        prices = prices[names].loc[idx].values.astype('float32')
         features = features.loc[idx].values.astype('float32')  
 
         # define train and test datasets
