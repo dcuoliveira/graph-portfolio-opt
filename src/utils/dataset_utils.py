@@ -63,3 +63,44 @@ def concatenate_prices_returns(prices, returns):
     all_df = pd.concat(all, axis=1)
 
     return all_df
+
+DEBUG = False
+
+if __name__ == "__main__":
+
+    if DEBUG:
+
+        import os
+        import numpy as np
+        from sklearn.model_selection import train_test_split
+
+        num_timesteps_in = 100
+        num_timesteps_out = 1
+        test_ratio = 0.2
+
+        # relevant paths
+        source_path = os.getcwd()
+        inputs_path = os.path.join(source_path, "src", "data", "inputs")
+
+        # prepare dataset
+        prices = pd.read_excel(os.path.join(inputs_path, "etfs-zhang-zohren-roberts.xlsx"))
+        prices.set_index("date", inplace=True)
+        returns = np.log(prices).diff().dropna()
+        prices = prices.loc[returns.index]
+        features = concatenate_prices_returns(prices=prices, returns=returns)
+        idx = features.index
+        returns = returns.loc[idx].values.astype('float32')
+        prices = prices.loc[idx].values.astype('float32')
+        features = features.loc[idx].values.astype('float32')  
+
+        # define train and test datasets
+        X_train, X_test, prices_train, prices_test = train_test_split(features, prices, test_size=test_ratio, random_state=1)
+        X_train, X_val, prices_train, prices_val = train_test_split(X_train, prices_train, test_size=test_ratio, random_state=1) 
+
+        X_train, prices_train = create_rolling_window_ts(features=X_train, 
+                                                        target=prices_train,
+                                                        num_timesteps_in=num_timesteps_in,
+                                                        num_timesteps_out=num_timesteps_out)
+        
+
+        
