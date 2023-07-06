@@ -1,6 +1,16 @@
 import pandas as pd
 import torch
 
+def timeseries_train_test_split(X, y, test_ratio):
+    test_size = int(len(X) * test_ratio)
+    
+    X_train = X[:test_size, :]
+    y_train = y[:test_size, :]
+    X_test = X[test_size:, :]
+    y_test = y[test_size:, :]
+
+    return X_train, X_test, y_train, y_test
+
 def create_rolling_indices(num_timesteps_in, num_timesteps_out, n_timesteps):
     
     # generate rolling window indices
@@ -20,13 +30,13 @@ def create_rolling_window_ts(target, features, num_timesteps_in, num_timesteps_o
     indices = create_rolling_indices(num_timesteps_in=num_timesteps_in,
                                      num_timesteps_out=num_timesteps_out,
                                      n_timesteps=n_timesteps)
-
+    
     # use rolling window indices to subset data
-    window_features, window_target = torch.zeros((len(indices), num_timesteps_in, features.shape[1])), torch.zeros((len(indices), num_timesteps_out, target.shape[1]))
+    window_features, window_target = torch.zeros((len(indices), num_timesteps_in, features.shape[1])), torch.zeros((len(indices), num_timesteps_out + 1, target.shape[1]))
     batch = 0
     for i, j in indices:
-        window_features[batch, :, :] = torch.tensor(features[i : i + num_timesteps_in, :])
-        window_target[batch, :, :] = torch.tensor(target[ i + num_timesteps_in : j, :])
+        window_features[batch, :, :] = torch.tensor(features[i:(i + num_timesteps_in), :])
+        window_target[batch, :, :] = torch.tensor(target[(i + num_timesteps_in - 1):j, :])
 
         batch += 1
 
@@ -72,7 +82,6 @@ if __name__ == "__main__":
 
         import os
         import numpy as np
-        from sklearn.model_selection import train_test_split
 
         num_timesteps_in = 100
         num_timesteps_out = 1
@@ -94,13 +103,12 @@ if __name__ == "__main__":
         features = features.loc[idx].values.astype('float32')  
 
         # define train and test datasets
-        X_train, X_test, prices_train, prices_test = train_test_split(features, prices, test_size=test_ratio, random_state=1)
-        X_train, X_val, prices_train, prices_val = train_test_split(X_train, prices_train, test_size=test_ratio, random_state=1) 
+        X_train, X_test, prices_train, prices_test = timeseries_train_test_split(features, prices, test_ratio=test_ratio)
+        X_train, X_val, prices_train, prices_val = timeseries_train_test_split(X_train, prices_train, test_ratio=test_ratio) 
 
         X_train, prices_train = create_rolling_window_ts(features=X_train, 
-                                                        target=prices_train,
-                                                        num_timesteps_in=num_timesteps_in,
-                                                        num_timesteps_out=num_timesteps_out)
-        
+                                                         target=prices_train,
+                                                         num_timesteps_in=num_timesteps_in,
+                                                         num_timesteps_out=num_timesteps_out)        
 
         
