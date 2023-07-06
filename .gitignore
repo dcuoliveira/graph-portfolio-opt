@@ -1,3 +1,6 @@
+# data
+src/data/inputs/new_etfs/*.csv.gz
+
 #vscode
 .DS_store
 
