@@ -37,7 +37,15 @@ parser.add_argument('-nto',
                     help='size of the lookforward window to be predicted',
                     default=1)
 
+parser.add_argument('-mn',
+                    '--model_name',
+                    type=str,
+                    help='model name to be used for saving the model',
+                    default=1)
+
 args = parser.parse_args()
+
+model_name = args.model_name
 
 # neural network hyperparameters
 input_size = 4 * 2
@@ -60,7 +68,7 @@ ascent = True
 
 # relevant paths
 source_path = os.getcwd()
-inputs_path = os.path.join(source_path, "src", "data", "inputs")
+inputs_path = os.path.join(source_path, "data", "inputs")
 
 # prepare dataset
 prices = pd.read_excel(os.path.join(inputs_path, "etfs-zhang-zohren-roberts.xlsx"))
@@ -111,7 +119,7 @@ lossfn = SharpeLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 # (4) training procedure
-training_loss_values = eval_loss_values = test_loss_values = []
+train_loss_values = eval_loss_values = test_loss_values = []
 pbar = tqdm(range(epochs + 1), total=(epochs + 1))
 for epoch in pbar:
 
@@ -130,7 +138,7 @@ for epoch in pbar:
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
-        training_loss_values.append(loss.detach().item() * -1)
+        train_loss_values.append(loss.detach().item() * -1)
 
     train_loss = (loss.detach().item() * -1)
 
@@ -149,7 +157,8 @@ for epoch in pbar:
 
     pbar.set_description("Epoch: %d, Train sharpe : %1.5f, Eval sharpe : %1.5f" % (epoch, train_loss, eval_loss))
 
-training_loss_df = pd.DataFrame(training_loss_values, columns=["sharpe_ratio"])
+train_loss_df = pd.DataFrame(train_loss_values, columns=["sharpe_ratio"])
+eval_loss_df = pd.DataFrame(eval_loss_values, columns=["sharpe_ratio"])
 
 model.eval()
 pbar = tqdm(enumerate(test_loader), total=len(test_loader))
@@ -169,3 +178,25 @@ for i, (X_batch, prices_batch) in pbar:
     pbar.set_description("Test sharpe : %1.5f" % (loss.item() * -1))
 
     test_loss_values.append(loss.detach().item() * -1)
+
+test_loss_df = pd.DataFrame(test_loss_values, columns=["sharpe_ratio"])
+
+results = {
+    
+    "model": model.state_dict(),
+    "train_loss": train_loss_df,
+    "eval_loss": eval_loss_df,
+    "test_loss": test_loss_df,
+
+    }
+
+output_path = os.path.join(os.getcwd(),
+                           "data",
+                           "outputs",
+                           model_name)
+output_name = "{model_name}_{epochs}_{batch_size}_{num_timesteps_in}_{num_timesteps_out}.pt".format(model_name=model_name,
+                                                                                                    epochs=epochs,
+                                                                                                    batch_size=batch_size,
+                                                                                                    num_timesteps_in=num_timesteps_in,
+                                                                                                    num_timesteps_out=num_timesteps_out)
+torch.save(results, os.path.join(output_path, output_name))
