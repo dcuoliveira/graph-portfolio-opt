@@ -19,17 +19,22 @@ class NewETFs(object):
     """
     
     def __init__(self,
-                 use_last_data: bool = True):
+                 use_last_data: bool = True,
+                 fields=["close"],
+                 years=["2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021"]):
         super().__init__()
 
         self.inputs_path = os.path.join(os.getcwd(), "src", "data", "inputs")
         self.use_last_data = use_last_data
-        self._read_data()
+        self.fields = fields
+        self.years = years
+
+        self._read_data(years=self.years, fields=self.fields)
 
 
     def _read_data(self,
-                   fields=["close"],
-                   years=["2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021"]):
+                   fields: list,
+                   years: list):
 
         if self.use_last_data:
             etfs_df = pd.read_csv(os.path.join(self.inputs_path, "etfs-new.csv"))
