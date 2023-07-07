@@ -123,5 +123,5 @@ DEBUG = False
 
 if __name__ == "__main__":
     if DEBUG:
-        loader = ETFsZZR()
+        loader = NewETFs()
         dataset = loader.get_dataset(num_timesteps_in=12, num_timesteps_out=12)
