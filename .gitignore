@@ -1,5 +1,5 @@
 # data
-src/data/inputs/new_etfs/*.csv.gz
+src/data/inputs/new_etfs/*
 
 #vscode
 .DS_store
