@@ -11,17 +11,17 @@ def timeseries_train_test_split(X, y, test_ratio):
 
     return X_train, X_test, y_train, y_test
 
-def create_rolling_indices(num_timesteps_in, num_timesteps_out, n_timesteps):
+def create_rolling_indices(num_timesteps_in, num_timesteps_out, n_timesteps, fix_start):
     
     # generate rolling window indices
     indices = [
-        (i, i + (num_timesteps_in + num_timesteps_out))
+        (0 if fix_start else i, i + (num_timesteps_in + num_timesteps_out))
         for i in range(n_timesteps - (num_timesteps_in + num_timesteps_out) + 1)
     ]
 
     return indices
 
-def create_rolling_window_ts(target, features, num_timesteps_in, num_timesteps_out):
+def create_rolling_window_ts(target, features, num_timesteps_in, num_timesteps_out, fix_start=False):
     
     if features.shape[0] != target.shape[0]:
         raise Exception("Features and target must have the same number of timesteps")
@@ -29,7 +29,8 @@ def create_rolling_window_ts(target, features, num_timesteps_in, num_timesteps_o
     n_timesteps = features.shape[0]
     indices = create_rolling_indices(num_timesteps_in=num_timesteps_in,
                                      num_timesteps_out=num_timesteps_out,
-                                     n_timesteps=n_timesteps)
+                                     n_timesteps=n_timesteps,
+                                     fix_start=fix_start)
     
     # use rolling window indices to subset data
     window_features, window_target = torch.zeros((len(indices), num_timesteps_in, features.shape[1])), torch.zeros((len(indices), num_timesteps_out + 1, target.shape[1]))
@@ -42,7 +43,7 @@ def create_rolling_window_ts(target, features, num_timesteps_in, num_timesteps_o
 
     return window_features, window_target
 
-def create_rolling_window_ts_for_graphs(target, features, num_timesteps_in, num_timesteps_out):
+def create_rolling_window_ts_for_graphs(target, features, num_timesteps_in, num_timesteps_out, fix_start=False):
     
     if features.shape[-1] != target.shape[-1]:
         raise Exception("Features and target must have the same number of timesteps")
@@ -50,7 +51,8 @@ def create_rolling_window_ts_for_graphs(target, features, num_timesteps_in, num_
     n_timesteps = features.shape[2]
     indices = create_rolling_indices(num_timesteps_in=num_timesteps_in,
                                      num_timesteps_out=num_timesteps_out,
-                                     n_timesteps=n_timesteps)
+                                     n_timesteps=n_timesteps,
+                                     fix_start=fix_start)
 
     # use rolling window indices to subset data
     window_features, window_target = [], []
