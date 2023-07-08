@@ -7,9 +7,10 @@ import torch
 from tqdm import tqdm
 import argparse
 
-from utils.dataset_utils import concatenate_prices_returns, create_rolling_window_ts, timeseries_train_test_split
+from utils.dataset_utils import create_rolling_window_ts, timeseries_train_test_split
 from loss_functions.SharpeLoss import SharpeLoss
 from models.DLPO import DLPO
+from data.NewETFs import NewETFs
 
 parser = argparse.ArgumentParser()
 
@@ -17,7 +18,7 @@ parser.add_argument('-e',
                     '--epochs',
                     type=int,
                     help='epochs to be used on the training process',
-                    default=10000)
+                    default=50)
 
 parser.add_argument('-bs',
                     '--batch_size',
@@ -48,8 +49,8 @@ args = parser.parse_args()
 model_name = args.model_name
 
 # neural network hyperparameters
-input_size = 4 * 2
-output_size = 4
+input_size = 1426
+output_size = 1426
 hidden_size = 64
 num_layers = 1
 
@@ -63,41 +64,39 @@ batch_size = args.batch_size
 drop_last = True
 num_timesteps_in = args.num_timesteps_in
 num_timesteps_out = args.num_timesteps_out
-test_ratio = 0.2
+train_ratio = 0.5
 ascent = True
+fix_start=False
 
 # relevant paths
 source_path = os.getcwd()
 inputs_path = os.path.join(source_path, "data", "inputs")
 
 # prepare dataset
-prices = pd.read_excel(os.path.join(inputs_path, "etfs-zhang-zohren-roberts.xlsx"))
-prices.set_index("date", inplace=True)
-names = prices.columns
-returns = np.log(prices).diff().dropna()
-prices = prices.loc[returns.index]
-features, names = concatenate_prices_returns(prices=prices, returns=returns)
-idx = features.index
-returns = returns[names].loc[idx].values.astype('float32')
-prices = prices[names].loc[idx].values.astype('float32')
-features = features.loc[idx].values.astype('float32')  
+loader = NewETFs(use_last_data=True)
+prices = loader.y.T
+features = loader.X
+features = features.reshape(features.shape[0], features.shape[1] * features.shape[2]).T
 
 # define train and test datasets
-X_train, X_test, prices_train, prices_test = timeseries_train_test_split(features, prices, test_ratio=test_ratio)
-X_train, X_val, prices_train, prices_val = timeseries_train_test_split(X_train, prices_train, test_ratio=test_ratio) 
+X_train, X_val, prices_train, prices_val = timeseries_train_test_split(features, prices, train_ratio=train_ratio)
+X_val, X_test, prices_val, prices_test = timeseries_train_test_split(X_val, prices_val, train_ratio=0.5) 
 
 X_train, prices_train = create_rolling_window_ts(features=X_train, 
                                                  target=prices_train,
                                                  num_timesteps_in=num_timesteps_in,
-                                                 num_timesteps_out=num_timesteps_out)
+                                                 num_timesteps_out=num_timesteps_out,
+                                                 fix_start=fix_start)
 X_val, prices_val = create_rolling_window_ts(features=X_val, 
                                              target=prices_val,
                                              num_timesteps_in=num_timesteps_in,
-                                             num_timesteps_out=num_timesteps_out)
+                                             num_timesteps_out=num_timesteps_out,
+                                             fix_start=fix_start)
 X_test, prices_test = create_rolling_window_ts(features=X_test, 
                                                target=prices_test,
                                                num_timesteps_in=num_timesteps_in,
-                                               num_timesteps_out=num_timesteps_out)
+                                               num_timesteps_out=num_timesteps_out,
+                                               fix_start=fix_start)
 
 # define data loaders
 train_loader = data.DataLoader(data.TensorDataset(X_train, prices_train), shuffle=False, batch_size=batch_size, drop_last=drop_last)
@@ -128,7 +127,6 @@ for epoch in pbar:
     for X_batch, prices_batch in train_loader:
                 
         # compute forward propagation
-        # NOTE - despite num_timesteps_out=1, the predictions are being made on the batch_size(=10) dimension. Need to fix that.
         weights_pred = model.forward(X_batch)
 
         # compute loss
@@ -191,6 +189,7 @@ results = {
     }
 
 output_path = os.path.join(os.getcwd(),
+                           "src,"
                            "data",
                            "outputs",
                            model_name)
