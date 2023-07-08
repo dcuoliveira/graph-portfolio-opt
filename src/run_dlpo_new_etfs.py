@@ -18,7 +18,7 @@ parser.add_argument('-e',
                     '--epochs',
                     type=int,
                     help='epochs to be used on the training process',
-                    default=10000)
+                    default=50)
 
 parser.add_argument('-bs',
                     '--batch_size',
@@ -49,8 +49,8 @@ args = parser.parse_args()
 model_name = args.model_name
 
 # neural network hyperparameters
-input_size = 4 * 2
-output_size = 4
+input_size = 1426
+output_size = 1426
 hidden_size = 64
 num_layers = 1
 
@@ -127,7 +127,6 @@ for epoch in pbar:
     for X_batch, prices_batch in train_loader:
                 
         # compute forward propagation
-        # NOTE - despite num_timesteps_out=1, the predictions are being made on the batch_size(=10) dimension. Need to fix that.
         weights_pred = model.forward(X_batch)
 
         # compute loss
@@ -190,6 +189,7 @@ results = {
     }
 
 output_path = os.path.join(os.getcwd(),
+                           "src,"
                            "data",
                            "outputs",
                            model_name)
