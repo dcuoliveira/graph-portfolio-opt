@@ -99,19 +99,23 @@ class NewETFs(object):
         self.edges = edge_indices
         self.edge_weights = values
 
-    def _generate_task(self,  num_timesteps_in: int = 12, num_timesteps_out: int = 12):
+    def _generate_task(self,  num_timesteps_in: int = 12, num_timesteps_out: int = 12, fix_start: bool = False):
 
         features, target = create_rolling_window_ts_for_graphs(target=self.y,
                                                                features=self.X,
                                                                num_timesteps_in=num_timesteps_in,
-                                                               num_timesteps_out=num_timesteps_out)
+                                                               num_timesteps_out=num_timesteps_out,
+                                                               fix_start=fix_start)
 
         self.features = features
         self.targets = target
 
-    def get_dataset(self, num_timesteps_in: int = 12, num_timesteps_out: int = 12) -> StaticGraphTemporalSignal:
+    def get_dataset(self, num_timesteps_in: int = 12,
+                    num_timesteps_out: int = 12,
+                    fix_start: bool = False) -> StaticGraphTemporalSignal:
+        
         self._get_edges_and_weights()
-        self._generate_task(num_timesteps_in, num_timesteps_out)
+        self._generate_task(num_timesteps_in, num_timesteps_out, fix_start) 
         dataset = StaticGraphTemporalSignal(self.edges,
                                             self.edge_weights,
                                             self.features,

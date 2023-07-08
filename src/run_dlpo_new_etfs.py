@@ -66,6 +66,7 @@ num_timesteps_in = args.num_timesteps_in
 num_timesteps_out = args.num_timesteps_out
 test_ratio = 0.2
 ascent = True
+fix_start=False
 
 # relevant paths
 source_path = os.getcwd()
@@ -83,15 +84,18 @@ X_train, X_val, prices_train, prices_val = timeseries_train_test_split(X_train, 
 X_train, prices_train = create_rolling_window_ts(features=X_train, 
                                                  target=prices_train,
                                                  num_timesteps_in=num_timesteps_in,
-                                                 num_timesteps_out=num_timesteps_out)
+                                                 num_timesteps_out=num_timesteps_out,
+                                                 fix_start=fix_start)
 X_val, prices_val = create_rolling_window_ts(features=X_val, 
                                              target=prices_val,
                                              num_timesteps_in=num_timesteps_in,
-                                             num_timesteps_out=num_timesteps_out)
+                                             num_timesteps_out=num_timesteps_out,
+                                             fix_start=fix_start)
 X_test, prices_test = create_rolling_window_ts(features=X_test, 
                                                target=prices_test,
                                                num_timesteps_in=num_timesteps_in,
-                                               num_timesteps_out=num_timesteps_out)
+                                               num_timesteps_out=num_timesteps_out,
+                                               fix_start=fix_start)
 
 # define data loaders
 train_loader = data.DataLoader(data.TensorDataset(X_train, prices_train), shuffle=False, batch_size=batch_size, drop_last=drop_last)
