@@ -1,13 +1,13 @@
 import pandas as pd
 import torch
 
-def timeseries_train_test_split(X, y, test_ratio):
-    test_size = int(len(X) * test_ratio)
+def timeseries_train_test_split(X, y, train_ratio):
+    train_ratio = int(len(X) * train_ratio)
     
-    X_train = X[:test_size, :]
-    y_train = y[:test_size, :]
-    X_test = X[test_size:, :]
-    y_test = y[test_size:, :]
+    X_train = X[:train_ratio, :]
+    y_train = y[:train_ratio, :]
+    X_test = X[train_ratio:, :]
+    y_test = y[train_ratio:, :]
 
     return X_train, X_test, y_train, y_test
 
