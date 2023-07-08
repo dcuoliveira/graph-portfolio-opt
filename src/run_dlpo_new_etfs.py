@@ -64,7 +64,7 @@ batch_size = args.batch_size
 drop_last = True
 num_timesteps_in = args.num_timesteps_in
 num_timesteps_out = args.num_timesteps_out
-test_ratio = 0.2
+train_ratio = 0.5
 ascent = True
 fix_start=False
 
@@ -76,10 +76,11 @@ inputs_path = os.path.join(source_path, "data", "inputs")
 loader = NewETFs(use_last_data=True)
 prices = loader.y.T
 features = loader.X
+features = features.reshape(features.shape[0], features.shape[1] * features.shape[2]).T
 
 # define train and test datasets
-X_train, X_test, prices_train, prices_test = timeseries_train_test_split(features, prices, test_ratio=test_ratio)
-X_train, X_val, prices_train, prices_val = timeseries_train_test_split(X_train, prices_train, test_ratio=test_ratio) 
+X_train, X_val, prices_train, prices_val = timeseries_train_test_split(features, prices, train_ratio=train_ratio)
+X_val, X_test, prices_val, prices_test = timeseries_train_test_split(X_val, prices_val, train_ratio=0.5) 
 
 X_train, prices_train = create_rolling_window_ts(features=X_train, 
                                                  target=prices_train,
