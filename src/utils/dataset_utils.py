@@ -40,15 +40,12 @@ def create_rolling_window_ts(target, features, num_timesteps_in, num_timesteps_o
                                      fix_start=fix_start)
     
     # use rolling window indices to subset data
-    window_features, window_target = torch.zeros((len(indices), num_timesteps_in, features.shape[1])), torch.zeros((len(indices), num_timesteps_out + 1, target.shape[1]))
-    batch = 0
+    window_features, window_target = [], []
     for i, j in indices:
-        window_features[batch, :, :] = torch.tensor(features[i:(i + num_timesteps_in), :])
-        window_target[batch, :, :] = torch.tensor(target[(i + num_timesteps_in - 1):j, :])
+        window_features.append(features[i:(i + num_timesteps_in), :].numpy())
+        window_target.append(target[(i + num_timesteps_in - 1):j, :].numpy())
 
-        batch += 1
-
-    return window_features, window_target
+    return torch.tensor(window_features), torch.tensor(window_target)
 
 def create_rolling_window_ts_for_graphs(target, features, num_timesteps_in, num_timesteps_out, fix_start=False):
     """"

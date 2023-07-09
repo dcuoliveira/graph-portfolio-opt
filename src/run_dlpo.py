@@ -16,7 +16,7 @@ parser.add_argument('-e',
                     '--epochs',
                     type=int,
                     help='epochs to be used on the training process',
-                    default=50)
+                    default=5)
 
 parser.add_argument('-bs',
                     '--batch_size',
@@ -97,7 +97,7 @@ X_test, prices_test = create_rolling_window_ts(features=X_test,
                                                fix_start=fix_start)
 
 # define data loaders
-train_loader = data.DataLoader(data.TensorDataset(X_train, prices_train), shuffle=False, batch_size=batch_size, drop_last=drop_last)
+train_loader = data.DataLoader(data.TensorDataset(X_train, prices_train), shuffle=True, batch_size=batch_size, drop_last=drop_last)
 val_loader = data.DataLoader(data.TensorDataset(X_val, prices_val), shuffle=False, batch_size=batch_size, drop_last=drop_last)
 test_loader = data.DataLoader(data.TensorDataset(X_test, prices_test), shuffle=False, batch_size=batch_size, drop_last=drop_last)
 
@@ -122,6 +122,7 @@ for epoch in pbar:
 
     # train model
     model.train()
+    train_loss = 0
     for X_batch, prices_batch in train_loader:
                 
         # compute forward propagation
@@ -129,60 +130,61 @@ for epoch in pbar:
 
         # compute loss
         loss = lossfn(prices_batch, weights_pred, ascent=ascent)
+        train_loss += loss.detach().item() * -1
 
         # compute gradients and backpropagate
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
-        train_loss_values.append(loss.detach().item() * -1)
 
-    train_loss = (loss.detach().item() * -1)
+    # store average train loss
+    avg_train_loss = train_loss / len(train_loader)
+    train_loss_values.append(avg_train_loss)
 
     # evaluate model 
     model.eval()
     with torch.no_grad():
-        for X_batch, prices_batch in test_loader:
+        eval_loss = 0
+        for X_batch, prices_batch in val_loader:
+            
             # compute forward propagation
             weights_pred = model.forward(X_batch)
 
             # compute loss
             loss = lossfn(prices_batch, weights_pred, ascent=ascent)
-            eval_loss_values.append(loss.detach().item() * -1)
+            eval_loss += loss.detach().item() * -1
+    
+        # store average evaluation loss
+        avg_eval_loss = eval_loss / len(val_loader)
+        eval_loss_values.append(avg_eval_loss)
 
-    eval_loss = (loss.detach().item() * -1)
-
-    pbar.set_description("Epoch: %d, Train sharpe : %1.5f, Eval sharpe : %1.5f" % (epoch, train_loss, eval_loss))
+    pbar.set_description("Epoch: %d, Train sharpe : %1.5f, Eval sharpe : %1.5f" % (epoch, avg_train_loss, avg_eval_loss))
 
 train_loss_df = pd.DataFrame(train_loss_values, columns=["sharpe_ratio"])
 eval_loss_df = pd.DataFrame(eval_loss_values, columns=["sharpe_ratio"])
 
-model.eval()
-pbar = tqdm(enumerate(test_loader), total=len(test_loader))
-for i, (X_batch, prices_batch) in pbar:
-    
-    optimizer.zero_grad()
-    
-    # compute forward propagation
-    weights_pred = model.forward(X_batch)
+with torch.no_grad():
+    # compute train weight predictions
+    weights_pred = model.forward(X_train)
+    # select predictions
+    weights_train_pred = weights_pred[:, -num_timesteps_out, :]
 
-    # compute loss
-    loss = lossfn(prices_batch, weights_pred, ascent=True)
-    
-    # compute gradients and backpropagate
-    loss.backward()
-    optimizer.step()
-    pbar.set_description("Test sharpe : %1.5f" % (loss.item() * -1))
+    # compute val weight predictions
+    weights_pred = model.forward(X_val)
+    # select predictions
+    weights_eval_pred = weights_pred[:, -num_timesteps_out, :]
 
-    test_loss_values.append(loss.detach().item() * -1)
-
-test_loss_df = pd.DataFrame(test_loss_values, columns=["sharpe_ratio"])
+    # compute test weight predictions
+    weights_pred = model.forward(X_test)
+    # select predictions
+    weights_test_pred = weights_pred[:, -num_timesteps_out, :]
 
 results = {
     
     "model": model.state_dict(),
     "train_loss": train_loss_df,
     "eval_loss": eval_loss_df,
-    "test_loss": test_loss_df,
+    "test_loss": avg_eval_loss,
 
     }
 
