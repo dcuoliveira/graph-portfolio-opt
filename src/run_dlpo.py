@@ -198,11 +198,10 @@ if __name__ == "__main__":
 
         }
 
-    output_path = os.path.join(os.getcwd(),
-                            "src,"
-                            "data",
-                            "outputs",
-                            model_name)
+    output_path = os.path.join(os.path.dirname(__file__),
+                                    "data",
+                                    "outputs",
+                                    model_name)
 
     # save args
     args_dict = vars(args)  
