@@ -36,11 +36,11 @@ parser.add_argument('-nto',
                     help='size of the lookforward window to be predicted',
                     default=1)
 
-parser.add_argument('-mn',
+parser.add_argument('-ts',
                     '--train_shuffle',
                     type=bool,
                     help='block shuffle train data',
-                    default="dlpo")
+                    default=True)
 
 parser.add_argument('-mn',
                     '--model_name',
