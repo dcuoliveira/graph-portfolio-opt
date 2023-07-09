@@ -5,6 +5,10 @@ from pandas import DataFrame, Timestamp, Timedelta, read_csv, concat, get_dummie
 import torch
 from torch import Tensor
 
+from torch_geometric.utils import dense_to_sparse
+from torch_geometric_temporal.signal import StaticGraphTemporalSignal
+from utils.dataset_utils import create_rolling_window_ts_for_graphs
+
 class CRSPLoader(object):
     """
     This class implements the loader to the US CRSP NYSE data.
@@ -31,6 +35,7 @@ class CRSPLoader(object):
         self,
         save_path: str,
     ):
+        print('Generating CRSP loader from raw data...')
         self.master_data = []
         cur_year = 2000
         while cur_year <= 2021:
@@ -38,8 +43,8 @@ class CRSPLoader(object):
             cur_files = os.listdir(year_path)
             cur_files.sort()
             cur_files = list(filter(lambda x: x.endswith('.csv.gz'), cur_files))
-            pbar = tqdm(enumerate(cur_files), total=len(cur_files))
-            for _, file in pbar:
+            pbar = tqdm(cur_files, total=len(cur_files))
+            for file in pbar:
                 pbar.set_description(f'Loading year: {cur_year}')
                 cur_data = read_csv(os.path.join(year_path, file)).iloc[: , 1:]
                 cur_data['date'] = Timestamp(f'{file[0:4]}-{file[4:6]}-{file[6:8]}')
@@ -48,36 +53,40 @@ class CRSPLoader(object):
         self.master_data = concat(self.master_data)
         self._categorize_master_data()
         self.master_data.to_csv(path_or_buf=save_path)
-        self._create_ticker_index()
+        self._update_ticker_index()
 
     def _load_data(
         self,
         load_path: str,
     ):
+        print('Loading in saved CRSP data...')
         self.master_data = read_csv(load_path)
         self.master_data['date'] = self.master_data['date'].astype('datetime64[ns]')
         self._categorize_master_data()
-        self._create_ticker_index()
+        self._update_ticker_index()
 
     def _categorize_master_data(
         self,
     ):
-        # Stringify first
+        # Stringify all first
         self.master_data['ticker'] = self.master_data['ticker'].astype('string')
         self.master_data['PERMNO'] = self.master_data['PERMNO'].astype('string')
         self.master_data['SICCD'] = self.master_data['SICCD'].astype('string')
         self.master_data['PERMCO'] = self.master_data['PERMCO'].astype('string')
         # Then we categorize
-        self.master_data['ticker'] = self.master_data['ticker'].astype('category')
         self.master_data['PERMNO'] = self.master_data['PERMNO'].astype('category')
         self.master_data['SICCD'] = self.master_data['SICCD'].astype('category')
         self.master_data['PERMCO'] = self.master_data['PERMCO'].astype('category')
 
-    def _create_ticker_index(
+    def _update_ticker_index(
         self,
+        ticker_list: Optional[List[str]] = None,
     ):
+        if ticker_list is None:
+            cats = self.master_data['ticker'].unique()
+        else :
+            cats = ticker_list
         self.ticker_index = {}
-        cats = self.master_data['ticker'].cat.categories
         for step, ticker in enumerate(cats):
             self.ticker_index[ticker] = step
         self.num_nodes = len(cats)
@@ -107,6 +116,7 @@ class CRSPLoader(object):
         self,
         data: Optional[DataFrame] = None,
     ) -> Tensor:
+        print('Generating feature matrix...')
         def ticker_index(ticker):
             return self.ticker_index[ticker]
         if data is None:
@@ -127,14 +137,95 @@ class CRSPLoader(object):
                           ]
         cat_feat_names = ['SICCD',
                           ]
-        dates = data['date'].unique()
         all_feats = []
-        for date in dates:
+        dates = data['date'].unique()
+        pbar = tqdm(dates, total=len(dates))
+        for date in pbar:
+            # Get data from current date
             cur_data = data[data['date'] == date]
+
+            # Get numerical features
             cur_feat = torch.tensor(cur_data[num_feat_names].values, dtype=torch.float)
+
+            # Get categorical features
             cur_feat = torch.cat((cur_feat, torch.tensor(get_dummies(cur_data[cat_feat_names]).values, dtype=torch.float)), dim=1)
+
+            # Get indices of tickers of the current date
             cur_tick_ind = torch.tensor(cur_data['ticker'].apply(ticker_index).values)
+
+            # Calculate final feature matrix of this date and append it to list
             num_feat = torch.zeros(self.num_nodes, cur_feat.shape[1], dtype=torch.float)
             num_feat[cur_tick_ind, :] = cur_feat
             all_feats.append(num_feat)
-        return torch.stack(all_feats)
+        return torch.stack(all_feats, dim=2)
+
+    def get_target_matrix(
+        self,
+        data: Optional[DataFrame] = None,
+    ) -> Tensor:
+        print('Generating target matrix...')
+        def ticker_index(ticker):
+            return self.ticker_index[ticker]
+        if data is None:
+            data = self.master_data
+        num_feat_names = ['open',
+                          ]
+        all_feats = []
+        dates = data['date'].unique()
+        pbar = tqdm(dates, total=len(dates))
+        for date in pbar:
+            # Get data from current date
+            cur_data = data[data['date'] == date]
+
+            # Get numerical features
+            cur_feat = torch.tensor(cur_data[num_feat_names].values, dtype=torch.float)
+
+            # Get indices of tickers of the current date
+            cur_tick_ind = torch.tensor(cur_data['ticker'].apply(ticker_index).values)
+
+            # Calculate final feature matrix of this date and append it to list
+            num_feat = torch.zeros(self.num_nodes, cur_feat.shape[1], dtype=torch.float)
+            num_feat[cur_tick_ind, :] = cur_feat
+            all_feats.append(num_feat)
+        return torch.stack(all_feats, dim=2)
+
+    def _get_edges_and_weights(
+        self,
+    ):
+        edge_indices, values = dense_to_sparse(torch.ones(self.num_nodes, self.num_nodes))
+        edge_indices = edge_indices.numpy()
+        values = values.numpy()
+        return edge_indices, values
+
+    def _generate_task(
+        self,
+        data: Optional[DataFrame] = None,
+        num_timesteps_in: int = 12,
+        num_timesteps_out: int = 12,
+    ):
+        print('Generating CRSP dataset...')
+        if data is None:
+            data = self.master_data
+        X = self.get_feature_matrix(data)
+        y = self.get_target_matrix(data)
+        features, targets = create_rolling_window_ts_for_graphs(target=y,
+                                                                features=X,
+                                                                num_timesteps_in=num_timesteps_in,
+                                                                num_timesteps_out=num_timesteps_out)
+        return features, targets
+
+    def get_dataset(
+        self,
+        data: Optional[DataFrame] = None,
+        num_timesteps_in: int = 12,
+        num_timesteps_out: int = 12,
+    ) -> StaticGraphTemporalSignal:
+        if data is None:
+            data = self.master_data
+        edges, edge_weights = self._get_edges_and_weights()
+        features, targets = self._generate_task(data, num_timesteps_in, num_timesteps_out)
+        dataset = StaticGraphTemporalSignal(edges,
+                                            edge_weights,
+                                            features,
+                                            targets)
+        return dataset
