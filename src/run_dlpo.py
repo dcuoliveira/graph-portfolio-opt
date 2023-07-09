@@ -37,6 +37,12 @@ parser.add_argument('-nto',
                     default=1)
 
 parser.add_argument('-mn',
+                    '--train_shuffle',
+                    type=bool,
+                    help='block shuffle train data',
+                    default="dlpo")
+
+parser.add_argument('-mn',
                     '--model_name',
                     type=str,
                     help='model name to be used for saving the model',
@@ -65,6 +71,7 @@ num_timesteps_out = args.num_timesteps_out
 train_ratio = 0.5
 ascent = True
 fix_start=False
+train_shuffle = args.train_shuffle
 
 # relevant paths
 source_path = os.getcwd()
@@ -97,7 +104,7 @@ X_test, prices_test = create_rolling_window_ts(features=X_test,
                                                fix_start=fix_start)
 
 # define data loaders
-train_loader = data.DataLoader(data.TensorDataset(X_train, prices_train), shuffle=True, batch_size=batch_size, drop_last=drop_last)
+train_loader = data.DataLoader(data.TensorDataset(X_train, prices_train), shuffle=train_shuffle, batch_size=batch_size, drop_last=drop_last)
 val_loader = data.DataLoader(data.TensorDataset(X_val, prices_val), shuffle=False, batch_size=batch_size, drop_last=drop_last)
 test_loader = data.DataLoader(data.TensorDataset(X_test, prices_test), shuffle=False, batch_size=batch_size, drop_last=drop_last)
 
