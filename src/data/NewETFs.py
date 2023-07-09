@@ -24,7 +24,7 @@ class NewETFs(object):
                  years=["2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021"]):
         super().__init__()
 
-        self.inputs_path = os.path.join(os.getcwd(), "src", "data", "inputs")
+        self.inputs_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "src", "data", "inputs")
         self.use_last_data = use_last_data
         self.fields = fields
         self.years = years
