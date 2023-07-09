@@ -74,7 +74,7 @@ fix_start=False
 train_shuffle = args.train_shuffle
 
 # relevant paths
-source_path = os.getcwd()
+source_path = os.path.dirname(__file__)
 inputs_path = os.path.join(source_path, "data", "inputs")
 
 # prepare dataset
