@@ -13,41 +13,12 @@ from data.NewETFs import NewETFs
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('-e',
-                    '--epochs',
-                    type=int,
-                    help='epochs to be used on the training process',
-                    default=5)
-
-parser.add_argument('-bs',
-                    '--batch_size',
-                    type=int,
-                    help='size of the batches for the time seriesd data',
-                    default=10)
-
-parser.add_argument('-nti',
-                    '--num_timesteps_in',
-                    type=int,
-                    help='size of the lookback window for the time series data',
-                    default=50)
-
-parser.add_argument('-nto',
-                    '--num_timesteps_out',
-                    type=int,
-                    help='size of the lookforward window to be predicted',
-                    default=1)
-
-parser.add_argument('-ts',
-                    '--train_shuffle',
-                    type=bool,
-                    help='block shuffle train data',
-                    default=True)
-
-parser.add_argument('-mn',
-                    '--model_name',
-                    type=str,
-                    help='model name to be used for saving the model',
-                    default="dlpo")
+parser.add_argument('-e', '--epochs', type=int, help='epochs to be used on the training process', default=5)
+parser.add_argument('-bs', '--batch_size', type=int, help='size of the batches for the time seriesd data', default=10)
+parser.add_argument('-nti', '--num_timesteps_in', type=int, help='size of the lookback window for the time series data', default=50)
+parser.add_argument('-nto', '--num_timesteps_out', type=int, help='size of the lookforward window to be predicted', default=1)
+parser.add_argument('-ts', '--train_shuffle', type=bool, help='block shuffle train data', default=True)
+parser.add_argument('-mn', '--model_name', type=str, help='model name to be used for saving the model', default="dlpo")
 
 if __name__ == "__main__":
 
