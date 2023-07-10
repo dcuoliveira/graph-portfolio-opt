@@ -1,0 +1,1 @@
+{"epochs": 100, "batch_size": 10, "num_timesteps_in": 50, "num_timesteps_out": 1, "train_shuffle": true, "model_name": "dlpo"}
