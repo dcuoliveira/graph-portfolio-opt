@@ -6,8 +6,7 @@ import torch
 from torch import Tensor
 
 from torch_geometric.utils import dense_to_sparse
-from torch_geometric_temporal.signal import StaticGraphTemporalSignal
-from utils.dataset_utils import create_rolling_window_ts_for_graphs
+from data.ForecastBatch import ForecastBatch
 
 class CRSPLoader(object):
     """
@@ -140,6 +139,7 @@ class CRSPLoader(object):
         all_feats = []
         dates = data['date'].unique()
         pbar = tqdm(dates, total=len(dates))
+        self.num_dates = len(dates)
         for date in pbar:
             # Get data from current date
             cur_data = data[data['date'] == date]
@@ -157,6 +157,7 @@ class CRSPLoader(object):
             num_feat = torch.zeros(self.num_nodes, cur_feat.shape[1], dtype=torch.float)
             num_feat[cur_tick_ind, :] = cur_feat
             all_feats.append(num_feat)
+        self.num_features = cur_feat.shape[1]
         return torch.stack(all_feats, dim=2)
 
     def get_target_matrix(
@@ -187,7 +188,7 @@ class CRSPLoader(object):
             num_feat = torch.zeros(self.num_nodes, cur_feat.shape[1], dtype=torch.float)
             num_feat[cur_tick_ind, :] = cur_feat
             all_feats.append(num_feat)
-        return torch.stack(all_feats, dim=2)
+        return torch.squeeze(torch.stack(all_feats, dim=2))
 
     def _get_edges_and_weights(
         self,
@@ -200,32 +201,28 @@ class CRSPLoader(object):
     def _generate_task(
         self,
         data: Optional[DataFrame] = None,
-        num_timesteps_in: int = 12,
-        num_timesteps_out: int = 12,
     ):
         print('Generating CRSP dataset...')
         if data is None:
             data = self.master_data
         X = self.get_feature_matrix(data)
         y = self.get_target_matrix(data)
-        features, targets = create_rolling_window_ts_for_graphs(target=y,
-                                                                features=X,
-                                                                num_timesteps_in=num_timesteps_in,
-                                                                num_timesteps_out=num_timesteps_out)
-        return features, targets
+        return X, y
 
     def get_dataset(
         self,
         data: Optional[DataFrame] = None,
-        num_timesteps_in: int = 12,
-        num_timesteps_out: int = 12,
-    ) -> StaticGraphTemporalSignal:
+        window_length: int = 50,
+        step_length: int = 5,
+    ) -> ForecastBatch:
         if data is None:
             data = self.master_data
         edges, edge_weights = self._get_edges_and_weights()
-        features, targets = self._generate_task(data, num_timesteps_in, num_timesteps_out)
-        dataset = StaticGraphTemporalSignal(edges,
-                                            edge_weights,
-                                            features,
-                                            targets)
+        features, targets = self._generate_task(data)
+        dataset = ForecastBatch(edges,
+                                edge_weights,
+                                features.numpy(),
+                                targets.numpy(),
+                                window_length,
+                                step_length)
         return dataset

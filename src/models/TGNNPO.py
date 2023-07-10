@@ -4,19 +4,17 @@ import torch.nn.functional as F
 from torch_geometric_temporal.nn.recurrent import A3TGCN2
 
 class TGNNPO(torch.nn.Module):
-    def __init__(self, node_features, periods, batch_size):
+    def __init__(self, node_features, num_nodes, periods):
         super(TGNNPO, self).__init__()
+        mid_channels = num_nodes * 5
 
         self.tgnn = A3TGCN2(in_channels=node_features, 
-                            out_channels=32, 
+                            out_channels=mid_channels, 
                             periods=periods,
-                            batch_size=batch_size)
+                            batch_size=periods)
         
         # equals single-shot prediction
-        self.linear = torch.nn.Linear(32, periods)
-
-        self.linear = torch.nn.Linear(32, periods)
-        self.softmax = torch.nn.Softmax(0)
+        self.linear = torch.nn.Linear(mid_channels, periods)
 
     def forward(self, x, edge_index):
         """
@@ -27,7 +25,8 @@ class TGNNPO(torch.nn.Module):
         h = F.relu(h)
         h = self.linear(h)
 
-        # apply softmax function to respect the contraint $w_i \in [0, 1]$
-        w = self.softmax(h)
+        # apply sigmoid function to respect the contraint $w_i \in [0, 1]$
+        h = torch.special.expit(h)
+        #  h = F.normalize(h, p=1.0, dim=1)
 
-        return w
+        return h
