@@ -1,12 +1,11 @@
-import torch.nn as nn
 import torch
 import torch.nn.functional as F
 from torch_geometric_temporal.nn.recurrent import A3TGCN2
 
 class TGNNPO(torch.nn.Module):
-    def __init__(self, node_features, num_nodes, periods):
+    def __init__(self, node_features, periods):
         super(TGNNPO, self).__init__()
-        mid_channels = num_nodes * 5
+        mid_channels = periods * 2
 
         self.tgnn = A3TGCN2(in_channels=node_features, 
                             out_channels=mid_channels, 
@@ -16,12 +15,12 @@ class TGNNPO(torch.nn.Module):
         # equals single-shot prediction
         self.linear = torch.nn.Linear(mid_channels, periods)
 
-    def forward(self, x, edge_index):
+    def forward(self, x, edge_index, edge_weight):
         """
         x = Node features for T time steps
         edge_index = Graph edge indices
         """
-        h = self.tgnn(x, edge_index)
+        h = self.tgnn(x, edge_index, edge_weight)
         h = F.relu(h)
         h = self.linear(h)
 

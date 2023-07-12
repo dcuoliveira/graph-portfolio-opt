@@ -77,11 +77,10 @@ class ForecastBatch(object):
         else:
             return torch.LongTensor(self.edge_index)
 
-    def _get_edge_weight(self):
-        if self.edge_weight is None:
-            return self.edge_weight
-        else:
-            return torch.FloatTensor(self.edge_weight)
+    def _get_edge_weight(self, time_index: int):
+        start_ind = time_index * self.step_length
+        end_ind  = start_ind + self.window_length
+        torch.FloatTensor(self.edge_weight[:, start_ind:end_ind])
 
     def _get_feature(self, time_index: int):
         start_ind = time_index * self.step_length
@@ -111,10 +110,10 @@ class ForecastBatch(object):
     def __getitem__(self, time_index: int):
         x = self._get_feature(time_index)
         edge_index = self._get_edge_index()
-        edge_weight = self._get_edge_weight()
+        edge_weight = self._get_edge_weight(time_index)
         y = self._get_target(time_index)
         additional_features = self._get_additional_features(time_index)
-        snapshot = Batch(x=x, edge_index=edge_index, edge_attr=edge_weight,
+        snapshot = Batch(x=x, edge_index=edge_index, edge_weight=edge_weight,
                         y=y, **additional_features)
         return snapshot
 

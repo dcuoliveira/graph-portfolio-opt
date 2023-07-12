@@ -29,6 +29,8 @@ class CRSPLoader(object):
             # Store path to raw yearly data
             self.yearly_path = os.path.join(os.path.dirname(__file__), "US_CRSP_NYSE", "Yearly")
             self._read_raw_data(self.load_path)
+        self.edge_raw_path = os.path.join(os.path.dirname(__file__), "correlation_networks", "monthly", "corr_networks_MR")
+        self._read_raw_edge_data()
 
     def _read_raw_data(
         self,
@@ -64,6 +66,22 @@ class CRSPLoader(object):
         self._categorize_master_data()
         self._update_ticker_index()
 
+    def _read_raw_edge_data(
+        self,
+    ):
+        print('Generating edge weights from raw data...')
+        self.edge_data = []
+        self.edge_data_index = 0
+        cur_files = os.listdir(self.edge_raw_path)
+        cur_files.sort()
+        pbar = tqdm(cur_files, total=len(cur_files))
+        for file in pbar:
+            pbar.set_description('Loading edge files')
+            self.edge_data.append(
+                (Timestamp(f'{file[0:4]}-{file[4:6]}-{file[6:8]}'), read_csv(os.path.join(self.edge_raw_path, file)).iloc[: , 1:])
+            )
+        self._update_edge_ticker_index()
+
     def _categorize_master_data(
         self,
     ):
@@ -86,9 +104,22 @@ class CRSPLoader(object):
         else :
             cats = ticker_list
         self.ticker_index = {}
+        self.rev_ticker_index = {}
         for step, ticker in enumerate(cats):
             self.ticker_index[ticker] = step
+            self.rev_ticker_index[step] = ticker
         self.num_nodes = len(cats)
+
+    def _update_edge_ticker_index(
+        self,
+    ):
+        cols = list(self.edge_data[0][1].columns)
+        self.edge_ticker_index = {}
+        self.rev_edge_ticker_index = {}
+        for step, ticker in enumerate(cols):
+            self.edge_ticker_index[ticker] = step
+            self.rev_edge_ticker_index[step] = ticker
+        self.num_nodes = len(cols)
     
     def select_tickers(
         self,
@@ -111,11 +142,29 @@ class CRSPLoader(object):
         window_start = test_day - time_delta
         return data[(data['date'] >= window_start) & (data['date'] <= test_day)]
 
+    def _get_edge_weights(
+        self,
+        data: DataFrame,
+    ) -> Tensor:
+        out_tensor = torch.ones(1, self.num_nodes**2, dtype=torch.float)
+        for ticker_index in range(self.num_nodes - 1):
+            for bottom_index in range(ticker_index + 1, self.num_nodes):
+                ticker1 = self.rev_ticker_index[ticker_index]
+                ticker2 = self.rev_ticker_index[bottom_index]
+                if ticker1 in data and ticker2 in data:
+                    value = data.loc[:, ticker1][self.edge_ticker_index[ticker2]]
+                else:
+                    value = 0.5
+                out_tensor[0][(ticker_index * self.num_nodes) + bottom_index] = value
+                out_tensor[0][(bottom_index * self.num_nodes) + ticker_index] = value
+        return out_tensor
+
     def get_feature_matrix(
         self,
         data: Optional[DataFrame] = None,
     ) -> Tensor:
         print('Generating feature matrix...')
+        self.edge_weights = []
         def ticker_index(ticker):
             return self.ticker_index[ticker]
         if data is None:
@@ -157,7 +206,16 @@ class CRSPLoader(object):
             num_feat = torch.zeros(self.num_nodes, cur_feat.shape[1], dtype=torch.float)
             num_feat[cur_tick_ind, :] = cur_feat
             all_feats.append(num_feat)
+
+            # Handle edge weights
+            cur_edge_date = self.edge_data[self.edge_data_index][0]
+            while self.edge_data_index + 1 < len(self.edge_data) and abs((date - cur_edge_date).total_seconds()) > abs((date - self.edge_data[self.edge_data_index + 1][0]).total_seconds()):
+                self.edge_data_index = self.edge_data_index + 1
+                cur_edge_date = self.edge_data[self.edge_data_index][0]
+            cur_corr_mat = self.edge_data[self.edge_data_index][1]
+            self.edge_weights.append(self._get_edge_weights(cur_corr_mat))
         self.num_features = cur_feat.shape[1]
+        self.edge_weights = torch.squeeze(torch.stack(self.edge_weights, dim=2))
         return torch.stack(all_feats, dim=2)
 
     def get_target_matrix(
@@ -193,10 +251,7 @@ class CRSPLoader(object):
     def _get_edges_and_weights(
         self,
     ):
-        edge_indices, values = dense_to_sparse(torch.ones(self.num_nodes, self.num_nodes))
-        edge_indices = edge_indices.numpy()
-        values = values.numpy()
-        return edge_indices, values
+        return dense_to_sparse(torch.ones(self.num_nodes, self.num_nodes))[0].numpy(), self.edge_weights.numpy()
 
     def _generate_task(
         self,
@@ -217,8 +272,8 @@ class CRSPLoader(object):
     ) -> ForecastBatch:
         if data is None:
             data = self.master_data
-        edges, edge_weights = self._get_edges_and_weights()
         features, targets = self._generate_task(data)
+        edges, edge_weights = self._get_edges_and_weights()
         dataset = ForecastBatch(edges,
                                 edge_weights,
                                 features.numpy(),
