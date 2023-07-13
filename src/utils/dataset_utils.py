@@ -30,7 +30,7 @@ def create_rolling_indices(num_timesteps_in, num_timesteps_out, n_timesteps, fix
 
     return indices
 
-def create_rolling_window_ts(target, features, num_timesteps_in, num_timesteps_out, fix_start=False):
+def create_rolling_window_ts(target, features, num_timesteps_in, num_timesteps_out, fix_start=False, drop_last=True):
     """"
     This function is used to create the rolling window time series to be used on DL ex-GNN.
 
@@ -51,10 +51,14 @@ def create_rolling_window_ts(target, features, num_timesteps_in, num_timesteps_o
     # use rolling window indices to subset data
     window_features, window_target = [], []
     for i, j in indices:
-        window_features.append(features[i:(i + num_timesteps_in), :].numpy())
-        window_target.append(target[(i + num_timesteps_in - 1):j, :].numpy())
+        window_features.append(features[i:j, :])
+        window_target.append(target[(j - 1):(j + num_timesteps_out), :])
 
-    return torch.tensor(window_features), torch.tensor(window_target)
+    if drop_last:
+        window_features = window_features[:-1]
+        window_target = window_target[:-1]
+
+    return torch.stack(window_features), torch.stack(window_target)
 
 def create_rolling_window_ts_for_graphs(target, features, num_timesteps_in, num_timesteps_out, fix_start=False):
     """"
