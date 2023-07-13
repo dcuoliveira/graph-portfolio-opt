@@ -32,41 +32,45 @@ if __name__ == "__main__":
 
         sys.path.append(os.path.join(os.getcwd(), "src"))
 
-        from utils.dataset_utils import concatenate_prices_returns, create_rolling_window_ts, timeseries_train_test_split
+        from data.NewETFs import NewETFs
+        from utils.dataset_utils import create_rolling_window_ts, timeseries_train_test_split
         from models.DLPO import DLPO
+
+        # parameters
+        num_timesteps_in = 50
+        num_timesteps_out = 1
+        train_ratio = 0.6
+        fix_start = False
+        train_shuffle = True
+        batch_size = 10
+        drop_last = True
 
         # relevant paths
         source_path = os.getcwd()
         inputs_path = os.path.join(source_path, "src", "data", "inputs")
 
         # prepare dataset
-        prices = pd.read_excel(os.path.join(inputs_path, "etfs-zhang-zohren-roberts.xlsx"))
-        prices.set_index("date", inplace=True)
-        returns = np.log(prices).diff().dropna()
-        prices = prices.loc[returns.index]
-        features, names = concatenate_prices_returns(prices=prices, returns=returns)
-        features = features.shift(+1).dropna()
-        idx = features.index
-        returns = returns[names].loc[idx].values.astype('float32')
-        prices = prices[names].loc[idx].values.astype('float32')
-        features = features.loc[idx].values.astype('float32')  
+        loader = NewETFs(use_last_data=True)
+        prices = loader.y.T
+        features = loader.X
+        features = features.reshape(features.shape[0], features.shape[1] * features.shape[2]).T
 
         # define train and test datasets
-        X_train, X_test, prices_train, prices_test = timeseries_train_test_split(features, prices, test_ratio=0.2)
-        X_train, X_val, prices_train, prices_val = timeseries_train_test_split(X_train, prices_train, test_ratio=0.2) 
+        X_train, X_val, prices_train, prices_val = timeseries_train_test_split(features, prices, train_ratio=train_ratio)
+        X_val, X_test, prices_val, prices_test = timeseries_train_test_split(X_val, prices_val, train_ratio=0.5) 
 
-        num_timesteps_out = 1
         X_train, prices_train = create_rolling_window_ts(features=X_train, 
-                                                         target=prices_train,
-                                                         num_timesteps_in=50,
-                                                         num_timesteps_out=num_timesteps_out)
+                                                        target=prices_train,
+                                                        num_timesteps_in=num_timesteps_in,
+                                                        num_timesteps_out=num_timesteps_out,
+                                                        fix_start=fix_start)
 
         # define data loaders
-        train_loader = data.DataLoader(data.TensorDataset(X_train, prices_train), shuffle=False, batch_size=10, drop_last=True)
+        train_loader = data.DataLoader(data.TensorDataset(X_train, prices_train), shuffle=train_shuffle, batch_size=batch_size, drop_last=drop_last)
 
         # (1) model
-        model = DLPO(input_size=4 * 2,
-                     output_size=4,
+        model = DLPO(input_size=1426,
+                     output_size=1426,
                      hidden_size=64,
                      num_layers=1,
                      num_timesteps_out=num_timesteps_out,
@@ -78,7 +82,6 @@ if __name__ == "__main__":
         (X_batch, prices_batch) = next(iter(train_loader))
                     
         # compute forward propagation
-        # NOTE - despite num_timesteps_out=1, the predictions are being made on the batch_size(=10) dimension. Need to fix that.
         weights_pred = model.forward(X_batch)
 
         # compute loss
