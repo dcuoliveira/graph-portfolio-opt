@@ -14,10 +14,19 @@ def timeseries_train_test_split(X, y, train_ratio):
 def create_rolling_indices(num_timesteps_in, num_timesteps_out, n_timesteps, fix_start):
     
     # generate rolling window indices
-    indices = [
-        (0 if fix_start else i, i + (num_timesteps_in + num_timesteps_out))
-        for i in range(n_timesteps - (num_timesteps_in + num_timesteps_out) + 1)
-    ]
+    indices = []
+    for i in range(n_timesteps - (num_timesteps_in + num_timesteps_out) + 1):
+        
+        if fix_start:
+            if i == 0:
+                indices.append((0, i + (num_timesteps_in + num_timesteps_out)))
+            else:
+                indices.append((0,  (i * num_timesteps_out) + (num_timesteps_in + num_timesteps_out)))
+        else:
+            if i == 0:
+                indices.append((i, i + (num_timesteps_in + num_timesteps_out)))
+            else:
+                indices.append((((i * num_timesteps_out)),  (i * num_timesteps_out) + (num_timesteps_in + num_timesteps_out)))
 
     return indices
 
