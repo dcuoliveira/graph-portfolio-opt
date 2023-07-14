@@ -66,31 +66,40 @@ class NewETFs(object):
         # compute returns and subset data
         returns = np.log(etfs_df).diff().dropna()
 
+        # save indexes
+        self.index = list(returns.index)
+        self.columns = list(returns.columns)
+
         # subset all
         idx = returns.index
-        returns = returns.loc[idx]
-        prices = etfs_df.loc[idx]
+        returns_df = returns.loc[idx]
+        prices_df = etfs_df.loc[idx]
 
         # create tensor with (num_nodes, num_features_per_node, num_timesteps)
         num_nodes = prices.shape[1]
         num_features_per_node = len(fields)
         num_timesteps = prices.shape[0]
 
-        X = torch.zeros(num_nodes, num_features_per_node, num_timesteps)
-        y = torch.zeros(num_nodes, num_timesteps)
+        features = torch.zeros(num_nodes, num_features_per_node, num_timesteps)
+        prices = torch.zeros(num_nodes, num_timesteps)
+        returns = torch.zeros(num_nodes, num_timesteps)
         for i in range(num_nodes):
             # features
-            X[i, :, :] = torch.from_numpy(returns.loc[:, returns.columns[i]].values)
+            features[i, :, :] = torch.from_numpy(returns_df.loc[:, returns_df.columns[i]].values)
 
             # target
-            y[i, :] = torch.from_numpy(prices.loc[:, prices.columns[i]].values)
+            prices[i, :] = torch.from_numpy(prices_df.loc[:, prices_df.columns[i]].values)
+
+            # returns
+            returns[i, :] = torch.from_numpy(returns_df.loc[:, returns_df.columns[i]].values)
         
         # create fully connected adjaneccny matrix
         A = torch.ones(num_nodes, num_nodes)
 
         self.A = A
-        self.X = X
-        self.y = y
+        self.features = features
+        self.returns = returns
+        self.prices = prices
 
     def _get_edges_and_weights(self):
         edge_indices, values = dense_to_sparse(self.A)
