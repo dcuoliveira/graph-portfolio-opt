@@ -94,7 +94,7 @@ if __name__ == "__main__":
         "model": model,
         "train_loss": None,
         "eval_loss": None,
-        "test_loss": None,
+        "test_loss": test_loss,
         "returns": returns_df,
         "weights": weights_df,
         "summary": summary_df
