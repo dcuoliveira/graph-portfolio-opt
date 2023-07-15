@@ -15,18 +15,22 @@ def create_rolling_indices(num_timesteps_in, num_timesteps_out, n_timesteps, fix
     
     # generate rolling window indices
     indices = []
-    for i in range(n_timesteps - (num_timesteps_in + num_timesteps_out) + 1):
-        
+    for i in range(n_timesteps - num_timesteps_out):
+
         if fix_start:
             if i == 0:
-                indices.append((0, i + (num_timesteps_in + num_timesteps_out)))
+                indices.append((0, (i + num_timesteps_in)))
             else:
-                indices.append((0,  (i * num_timesteps_out) + (num_timesteps_in + num_timesteps_out)))
+                if indices[-1][1] == (n_timesteps - num_timesteps_out):
+                    continue
+                indices.append((0,  indices[-1][1] + num_timesteps_out))
         else:
             if i == 0:
-                indices.append((i, i + (num_timesteps_in + num_timesteps_out)))
+                indices.append((i, (i + num_timesteps_in)))
             else:
-                indices.append((((i * num_timesteps_out)),  (i * num_timesteps_out) + (num_timesteps_in + num_timesteps_out)))
+                if indices[-1][1] == (n_timesteps - num_timesteps_out):
+                    continue
+                indices.append((indices[-1][0] + num_timesteps_out,  indices[-1][1] + num_timesteps_out))
 
     return indices
 
