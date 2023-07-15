@@ -76,9 +76,9 @@ class NewETFs(object):
         prices_df = etfs_df.loc[idx]
 
         # create tensor with (num_nodes, num_features_per_node, num_timesteps)
-        num_nodes = prices.shape[1]
+        num_nodes = prices_df.shape[1]
         num_features_per_node = len(fields)
-        num_timesteps = prices.shape[0]
+        num_timesteps = prices_df.shape[0]
 
         features = torch.zeros(num_nodes, num_features_per_node, num_timesteps)
         prices = torch.zeros(num_nodes, num_timesteps)
