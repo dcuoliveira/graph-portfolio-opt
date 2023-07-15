@@ -52,7 +52,7 @@ if __name__ == "__main__":
     inputs_path = os.path.join(source_path, "data", "inputs")
 
     # prepare dataset
-    loader = NewETFs(use_last_data=True)
+    loader = NewETFs(use_last_data=True, use_first_50_etfs=True)
     prices = loader.y.T
     features = loader.X
     features = features.reshape(features.shape[0], features.shape[1] * features.shape[2]).T
