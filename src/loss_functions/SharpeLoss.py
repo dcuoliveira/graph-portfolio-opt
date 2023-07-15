@@ -9,7 +9,7 @@ class SharpeLoss(nn.Module):
     def forward(self, prices, weights, ascent=True, annualize=True):
         
         # asset returns
-        asset_returns = torch.diff(torch.log(prices), dim=1)
+        asset_returns = torch.diff(torch.log(prices), dim=1 if prices.dim() == 3 else 0)
 
         # portfolio returns
         portfolio_returns = torch.mul(weights, asset_returns)
@@ -17,7 +17,7 @@ class SharpeLoss(nn.Module):
         # portfolio sharpe
         sharpe_ratio = (torch.mean(portfolio_returns) / torch.std(portfolio_returns)) * (np.sqrt(252) if annualize else 1)
 
-        return sharpe_ratio * (-1 if ascent else 1)
+        return sharpe_ratio * (-1 if ascent else 1), asset_returns
     
 DEBUG = False
 
