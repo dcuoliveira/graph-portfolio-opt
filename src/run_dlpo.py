@@ -27,8 +27,8 @@ if __name__ == "__main__":
     model_name = args.model_name
 
     # neural network hyperparameters
-    input_size = 1426
-    output_size = 1426
+    input_size = 49
+    output_size = 49
     hidden_size = 64
     num_layers = 1
 
@@ -53,8 +53,8 @@ if __name__ == "__main__":
 
     # prepare dataset
     loader = NewETFs(use_last_data=True, use_first_50_etfs=True)
-    prices = loader.y.T
-    features = loader.X
+    prices = loader.prices.T
+    features = loader.features
     features = features.reshape(features.shape[0], features.shape[1] * features.shape[2]).T
 
     # define train and test datasets
