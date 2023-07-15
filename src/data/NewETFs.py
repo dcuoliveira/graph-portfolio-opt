@@ -20,12 +20,14 @@ class NewETFs(object):
     
     def __init__(self,
                  use_last_data: bool = True,
+                 use_first_50_etfs: bool=True,
                  fields=["close"],
                  years=["2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021"]):
         super().__init__()
 
         self.inputs_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "inputs")
         self.use_last_data = use_last_data
+        self.use_first_50_etfs = use_first_50_etfs
         self.fields = fields
         self.years = years
 
@@ -37,7 +39,12 @@ class NewETFs(object):
                    years: list):
 
         if self.use_last_data:
-            etfs_df = pd.read_csv(os.path.join(self.inputs_path, "etfs-new.csv"))
+            
+            if self.use_first_50_etfs:
+                etfs_df = pd.read_csv(os.path.join(self.inputs_path, "etfs-new-top50.csv"))
+            else:
+                etfs_df = pd.read_csv(os.path.join(self.inputs_path, "etfs-new.csv"))
+
             etfs_df["date"] = pd.to_datetime(etfs_df["date"])
             etfs_df.set_index("date", inplace=True)
         else:
@@ -58,6 +65,7 @@ class NewETFs(object):
 
                     etfs.append(pivot_tmp_df)
             etfs_df = pd.concat(etfs, axis=0)
+
             etfs_df = etfs_df.sort_index().dropna(axis=1, how="any")
             etfs_df.index.name = "date"
 
