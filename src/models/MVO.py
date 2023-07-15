@@ -3,7 +3,7 @@ import numpy as np
 import cvxopt as opt
 from cvxopt import solvers
 
-from src.estimators import Estimators
+from estimators.Estimators import Estimators
 
 class MVO(Estimators):
     def __init__(self,
@@ -29,7 +29,12 @@ class MVO(Estimators):
 
     def forward(self,
                 returns: torch.Tensor,
-                num_timesteps_out: int) -> torch.Tensor:
+                num_timesteps_out: int,
+                verbose: bool=True) -> torch.Tensor:
+        
+        solvers.options['show_progress'] = not verbose
+
+        n = returns.shape[1]
 
         # mean estimator
         if self.mean_estimator == "mle":
