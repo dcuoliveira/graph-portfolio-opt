@@ -11,6 +11,8 @@ class MVO(Estimators):
                  mean_estimator: str="mle",
                  covariance_estimator: str="mle") -> None:
         """"
+        This function impements the mean-variance optimization (MVO) method proposed by Markowitz (1952).
+
         Args:
             risk_aversion (float): risk aversion parameter. Defaults to 0.5. 
                                    The risk aversion parameter is a scalar that controls the trade-off between risk and return.
@@ -19,7 +21,8 @@ class MVO(Estimators):
             covariance_estimator (str): covariance estimator to be used. Defaults to "mle", which defines the maximum likelihood estimator.
 
         References:
-        Ang, Andrew, 2014. "Asset Management: A Systematic Approach to Factor Investing," Oxford University Press. 
+        Markowitz, H. (1952) Portfolio Selection. The Journal of Finance.
+        Ang, Andrew, (2014). Asset Management: A Systematic Approach to Factor Investing. Oxford University Press. 
         """
         super().__init__()
         
