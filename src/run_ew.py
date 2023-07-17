@@ -59,6 +59,7 @@ if __name__ == "__main__":
                                     "outputs",
                                     model_name)
 
+    # check if dir exists
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
