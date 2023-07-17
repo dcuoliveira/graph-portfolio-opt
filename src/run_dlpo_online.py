@@ -142,9 +142,19 @@ if __name__ == "__main__":
     # compute weights
     weights = model.forward(returns)
 
-    # save results
-    returns_df = pd.DataFrame(returns.numpy(), index=loader.index, columns=loader.columns)
-    weights_df = pd.DataFrame(weights.numpy(), index=loader.index, columns=loader.columns)
+    if test_weights.dim() == 3:
+        weights = test_weights.reshape(test_weights.shape[0] * test_weights.shape[1], test_weights.shape[2])
+    else:
+        weights = test_weights
+
+    if test_returns.dim() == 3:
+        returns = test_returns.reshape(test_weights.shape[0] * test_weights.shape[1], test_weights.shape[2])
+    else:
+        returns = test_returns
+
+    # (4) save results
+    returns_df = pd.DataFrame(returns.numpy(), index=loader.index[(num_timesteps_in + num_timesteps_out):], columns=loader.columns)
+    weights_df = pd.DataFrame(weights.numpy(), index=loader.index[(num_timesteps_in + num_timesteps_out):], columns=loader.columns)
     
     melt_returns_df = returns_df.reset_index().melt("index").rename(columns={"index": "date", "variable": "ticker", "value": "returns"})
     melt_weights_df = weights_df.reset_index().melt("index").rename(columns={"index": "date", "variable": "ticker", "value": "weights"})
