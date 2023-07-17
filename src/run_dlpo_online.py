@@ -98,11 +98,11 @@ if __name__ == "__main__":
                                        batch_size=batch_size,
                                        drop_last=drop_last)
 
+        train_loss_vals = 0
         for epoch in range(epochs):
 
             # train/validate model
             model.train()
-            train_loss_vals = 0
             for X_batch, prices_batch in train_loader:
                         
                 # compute forward propagation
