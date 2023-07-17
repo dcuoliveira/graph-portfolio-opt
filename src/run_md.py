@@ -60,7 +60,7 @@ if __name__ == "__main__":
         X_t = X_steps[step, :, :]
         prices_t1 = prices_steps[step, :, :]
 
-        weights_t = model.forward(returns=X_t, num_timesteps_out=num_timesteps_out)
+        weights_t = model.forward_analytic(returns=X_t, num_timesteps_out=num_timesteps_out)
         test_weights[step, :, :] = weights_t
 
         loss, returns_t1 = lossfn(weights=weights_t, prices=prices_t1)
