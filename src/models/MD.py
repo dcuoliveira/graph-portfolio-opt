@@ -1,7 +1,6 @@
 import torch
 import numpy as np
-import cvxopt as opt
-from cvxopt import solvers
+import scipy.optimize as opt
 
 from estimators.Estimators import Estimators
 
@@ -21,28 +20,39 @@ class MD(Estimators):
         
         self.covariance_estimator = covariance_estimator
 
+    def objective(self, weights):
+   
+        portfolio_volatility = np.sqrt(weights.T @ self.cov_t @ weights)
+        weighted_volatilities = weights.T @ self.vol_t
+        diversification_ratio = - weighted_volatilities / portfolio_volatility
+        return diversification_ratio
+
     def forward(self,
                 returns: torch.Tensor,
-                num_timesteps_out: int,
-                verbose: bool=True) -> torch.Tensor:
-        
-       pass
-    
-    def forward_analytic(self,
-                         returns: torch.Tensor,
-                         num_timesteps_out: int) -> torch.Tensor:
-        
+                num_timesteps_out: int) -> torch.Tensor:
+
         # covariance estimator
         if self.covariance_estimator == "mle":
             cov_t = self.MLECovariance(returns)
         else:
             raise NotImplementedError
         
-        # compute volatilities from each asset
-        vol_t = torch.sqrt(torch.diag(cov_t))[:, None]
+        N = returns.shape[1]
 
-        # compute weights
-        wt = torch.divide(torch.matmul(torch.inverse(cov_t), vol_t), torch.matmul(torch.matmul(vol_t.T, torch.inverse(cov_t)), vol_t))
-        wt = wt.repeat(num_timesteps_out, 1)
+        self.cov_t = cov_t.numpy()
+        self.vol_t = torch.sqrt(torch.diag(cov_t))[:, None].numpy()
+
+        # constraint 1 : \sum w_i = 1
+        constraints = ({'type': 'eq', 'fun': lambda w: np.sum(w) - 1})
+
+        # constraint 2 : w_i \in [0, 1]
+        bounds = [(0, 1) for _ in range(N)]
+
+        # initial guess for the weights (equal distribution)
+        w0 = np.repeat(1 / N, N)
+
+        # perform the optimization
+        opt_output = opt.minimize(self.objective, w0, method='SLSQP', bounds=bounds, constraints=constraints)
+        wt = torch.tensor(np.array(opt_output.x)).T.repeat(num_timesteps_out, 1)
 
         return wt
