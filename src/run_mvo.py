@@ -60,10 +60,10 @@ if __name__ == "__main__":
         X_t = X_steps[step, :, :]
         prices_t1 = prices_steps[step, :, :]
 
-        weights_t = model.forward(returns=X_t, num_timesteps_out=num_timesteps_out)
-        test_weights[step, :, :] = weights_t
+        weights_t1 = model.forward(returns=X_t, num_timesteps_out=num_timesteps_out)
+        test_weights[step, :, :] = weights_t1
 
-        loss, returns_t1 = lossfn(weights=weights_t, prices=prices_t1)
+        loss, returns_t1 = lossfn(weights=weights_t1, prices=prices_t1)
         test_returns[step, :, :] = returns_t1
 
         test_loss[step, :] = loss.item()
