@@ -72,3 +72,8 @@ class MVO(Estimators):
         wt = torch.tensor(np.array(opt_output["x"])).T.repeat(num_timesteps_out, 1)
 
         return wt
+    
+    def forward_analytic(self,
+                         returns: torch.Tensor,
+                         num_timesteps_out: int) -> torch.Tensor:
+        pass
