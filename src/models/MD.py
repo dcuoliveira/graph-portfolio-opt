@@ -39,10 +39,10 @@ class MD(Estimators):
             raise NotImplementedError
         
         # compute volatilities from each asset
-        vol_t = torch.sqrt(torch.diag(cov_t))
+        vol_t = torch.sqrt(torch.diag(cov_t))[:, None]
 
         # compute weights
-        wt = torch.divide(torch.matmul(torch.inverse(cov_t), vol_t), torch.matmul(vol_t.T, torch.inverse(cov_t), vol_t))
+        wt = torch.divide(torch.matmul(torch.inverse(cov_t), vol_t), torch.matmul(torch.matmul(vol_t.T, torch.inverse(cov_t)), vol_t))
         wt = wt.repeat(num_timesteps_out, 1)
 
         return wt
