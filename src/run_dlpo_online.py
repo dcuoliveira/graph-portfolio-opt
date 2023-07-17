@@ -84,7 +84,7 @@ if __name__ == "__main__":
     train_loss = torch.zeros((X_steps.shape[0], 1))
     test_loss = torch.zeros((X_steps.shape[0], 1))
 
-    pbar = tqdm(range(X_steps.shape[0]), total=(X_steps.shape[0] + 1))
+    pbar = tqdm(range(X_steps.shape[0]-1), total=(X_steps.shape[0] + 1))
     for step in pbar:
         X_t = X_steps[step, :, :]
         prices_t1 = prices_steps[step, :, :]
@@ -92,7 +92,7 @@ if __name__ == "__main__":
         X_train_t, X_test_t, prices_train_t1, prices_test_t1 = timeseries_train_test_split_online(X=X_t,
                                                                                                   y=prices_t1,
                                                                                                   test_size=num_timesteps_out)
-
+        
         train_loader = data.DataLoader(data.TensorDataset(X_train_t, prices_train_t1),
                                        shuffle=train_shuffle,
                                        batch_size=batch_size,
@@ -138,9 +138,6 @@ if __name__ == "__main__":
         test_loss[step, :] = eval_loss_vals
 
         pbar.set_description("Steps: %d, Train sharpe : %1.5f, Test sharpe : %1.5f" % (step, avg_train_loss_vals, eval_loss_vals))
-
-    # compute weights
-    weights = model.forward(returns)
 
     if test_weights.dim() == 3:
         weights = test_weights.reshape(test_weights.shape[0] * test_weights.shape[1], test_weights.shape[2])
