@@ -1,5 +1,5 @@
 # data
-src/data/inputs/new_etfs/*
+src/data/inputs/crsp/*
 src/data/outputs/*/*.pt
 src/data/outputs/*/*.csv
 
