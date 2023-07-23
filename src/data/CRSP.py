@@ -9,7 +9,7 @@ from torch_geometric.utils import dense_to_sparse
 from torch_geometric_temporal.signal import StaticGraphTemporalSignal
 from utils.dataset_utils import create_rolling_window_ts_for_graphs
 
-class NewETFs(object):
+class CRSP(object):
     """
     This class implements the dataset used in Zhang, Zohren, and Roberts (2021)
     https://arxiv.org/abs/2005.13665 in to torch geomatric data loader format.
@@ -41,9 +41,9 @@ class NewETFs(object):
         if self.use_last_data:
             
             if self.use_first_50_etfs:
-                etfs_df = pd.read_csv(os.path.join(self.inputs_path, "etfs-new-top50.csv"))
+                etfs_df = pd.read_csv(os.path.join(self.inputs_path, "crsp-new-top50.csv"))
             else:
-                etfs_df = pd.read_csv(os.path.join(self.inputs_path, "etfs-new.csv"))
+                etfs_df = pd.read_csv(os.path.join(self.inputs_path, "crsp-new.csv"))
 
             etfs_df["date"] = pd.to_datetime(etfs_df["date"])
             etfs_df.set_index("date", inplace=True)
