@@ -2,22 +2,22 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-class SharpeLoss(nn.Module):
+class ExpectedRet(nn.Module):
     def __init__(self):
         super().__init__()
 
     def forward(self, prices, weights, ascent=True, annualize=True):
         
         # asset returns
-        asset_returns = torch.diff(torch.log(prices), dim=1 if prices.dim() == 3 else 0)
+        asset_returns = torch.diff(torch.log(prices), dim=1)
 
         # portfolio returns
         portfolio_returns = torch.mul(weights, asset_returns)
 
-        # portfolio sharpe
-        sharpe_ratio = (torch.mean(portfolio_returns) / torch.std(portfolio_returns)) * (np.sqrt(252) if annualize else 1)
+        # portfolio average realized returns
+        expected_return = torch.mean(portfolio_returns) * (252 if annualize else 1)
 
-        return sharpe_ratio * (-1 if ascent else 1), asset_returns
+        return expected_return * (-1 if ascent else 1)
     
 DEBUG = False
 
@@ -77,7 +77,7 @@ if __name__ == "__main__":
                      batch_first=True)
 
         # (2) loss fucntion
-        lossfn = SharpeLoss()
+        lossfn = ExpectedRet()
         
         (X_batch, prices_batch) = next(iter(train_loader))
                     

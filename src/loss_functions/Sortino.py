@@ -2,22 +2,28 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-class SharpeLoss(nn.Module):
+class Sortino(nn.Module):
     def __init__(self):
         super().__init__()
 
     def forward(self, prices, weights, ascent=True, annualize=True):
         
         # asset returns
-        asset_returns = torch.diff(torch.log(prices), dim=1 if prices.dim() == 3 else 0)
+        asset_returns = torch.diff(torch.log(prices), dim=1)
 
         # portfolio returns
         portfolio_returns = torch.mul(weights, asset_returns)
 
-        # portfolio sharpe
-        sharpe_ratio = (torch.mean(portfolio_returns) / torch.std(portfolio_returns)) * (np.sqrt(252) if annualize else 1)
+        # portfolio downside vol
+        downside_rets = portfolio_returns.clone()
+        downside_rets[downside_rets >= 0] = np.nan
+        downside_rets = downside_rets.reshape(-1)
+        downside_vol = torch.std(downside_rets[~downside_rets.isnan()])
 
-        return sharpe_ratio * (-1 if ascent else 1), asset_returns
+        # portfolio sharpe
+        sharpe_ratio = (torch.mean(portfolio_returns) / downside_vol) * (np.sqrt(252) if annualize else 1)
+
+        return sharpe_ratio * (-1 if ascent else 1)
     
 DEBUG = False
 
@@ -77,7 +83,7 @@ if __name__ == "__main__":
                      batch_first=True)
 
         # (2) loss fucntion
-        lossfn = SharpeLoss()
+        lossfn = Sortino()
         
         (X_batch, prices_batch) = next(iter(train_loader))
                     

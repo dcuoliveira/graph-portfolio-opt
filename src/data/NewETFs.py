@@ -20,12 +20,14 @@ class NewETFs(object):
     
     def __init__(self,
                  use_last_data: bool = True,
+                 use_first_50_etfs: bool=True,
                  fields=["close"],
                  years=["2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021"]):
         super().__init__()
 
-        self.inputs_path = os.path.join(os.getcwd(), "src", "data", "inputs")
+        self.inputs_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "inputs")
         self.use_last_data = use_last_data
+        self.use_first_50_etfs = use_first_50_etfs
         self.fields = fields
         self.years = years
 
@@ -37,7 +39,12 @@ class NewETFs(object):
                    years: list):
 
         if self.use_last_data:
-            etfs_df = pd.read_csv(os.path.join(self.inputs_path, "etfs-new.csv"))
+            
+            if self.use_first_50_etfs:
+                etfs_df = pd.read_csv(os.path.join(self.inputs_path, "etfs-new-top50.csv"))
+            else:
+                etfs_df = pd.read_csv(os.path.join(self.inputs_path, "etfs-new.csv"))
+
             etfs_df["date"] = pd.to_datetime(etfs_df["date"])
             etfs_df.set_index("date", inplace=True)
         else:
@@ -58,6 +65,7 @@ class NewETFs(object):
 
                     etfs.append(pivot_tmp_df)
             etfs_df = pd.concat(etfs, axis=0)
+
             etfs_df = etfs_df.sort_index().dropna(axis=1, how="any")
             etfs_df.index.name = "date"
 
@@ -66,31 +74,40 @@ class NewETFs(object):
         # compute returns and subset data
         returns = np.log(etfs_df).diff().dropna()
 
+        # save indexes
+        self.index = list(returns.index)
+        self.columns = list(returns.columns)
+
         # subset all
         idx = returns.index
-        returns = returns.loc[idx]
-        prices = etfs_df.loc[idx]
+        returns_df = returns.loc[idx]
+        prices_df = etfs_df.loc[idx]
 
         # create tensor with (num_nodes, num_features_per_node, num_timesteps)
-        num_nodes = prices.shape[1]
+        num_nodes = prices_df.shape[1]
         num_features_per_node = len(fields)
-        num_timesteps = prices.shape[0]
+        num_timesteps = prices_df.shape[0]
 
-        X = torch.zeros(num_nodes, num_features_per_node, num_timesteps)
-        y = torch.zeros(num_nodes, num_timesteps)
+        features = torch.zeros(num_nodes, num_features_per_node, num_timesteps)
+        prices = torch.zeros(num_nodes, num_timesteps)
+        returns = torch.zeros(num_nodes, num_timesteps)
         for i in range(num_nodes):
             # features
-            X[i, :, :] = torch.from_numpy(returns.loc[:, returns.columns[i]].values)
+            features[i, :, :] = torch.from_numpy(returns_df.loc[:, returns_df.columns[i]].values)
 
             # target
-            y[i, :] = torch.from_numpy(prices.loc[:, prices.columns[i]].values)
+            prices[i, :] = torch.from_numpy(prices_df.loc[:, prices_df.columns[i]].values)
+
+            # returns
+            returns[i, :] = torch.from_numpy(returns_df.loc[:, returns_df.columns[i]].values)
         
         # create fully connected adjaneccny matrix
         A = torch.ones(num_nodes, num_nodes)
 
         self.A = A
-        self.X = X
-        self.y = y
+        self.features = features
+        self.returns = returns
+        self.prices = prices
 
     def _get_edges_and_weights(self):
         edge_indices, values = dense_to_sparse(self.A)

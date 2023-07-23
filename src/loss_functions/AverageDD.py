@@ -2,22 +2,32 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-class SharpeLoss(nn.Module):
+class AvgDD(nn.Module):
     def __init__(self):
         super().__init__()
 
     def forward(self, prices, weights, ascent=True, annualize=True):
         
         # asset returns
-        asset_returns = torch.diff(torch.log(prices), dim=1 if prices.dim() == 3 else 0)
+        asset_returns = torch.diff(torch.log(prices), dim=1)
 
         # portfolio returns
         portfolio_returns = torch.mul(weights, asset_returns)
+        portfolio_returns = portfolio_returns.reshape(portfolio_returns.shape[0] * portfolio_returns.shape[1], portfolio_returns.shape[2])
 
-        # portfolio sharpe
-        sharpe_ratio = (torch.mean(portfolio_returns) / torch.std(portfolio_returns)) * (np.sqrt(252) if annualize else 1)
+        # cummualitive portfolio returns
+        cummulative_portfolio_returns = torch.cumprod(1 + portfolio_returns.sum(axis=1), dim=0)
 
-        return sharpe_ratio * (-1 if ascent else 1), asset_returns
+        # rolling max value
+        rolling_max = torch.cummax(cummulative_portfolio_returns, dim=0)[0]
+
+        # drawdown
+        drawdown = (cummulative_portfolio_returns - rolling_max) / rolling_max
+
+        # max. drawdown
+        avg_drawdown = torch.mean(drawdown)
+
+        return avg_drawdown * (-1 if ascent else 1)
     
 DEBUG = False
 
@@ -60,10 +70,11 @@ if __name__ == "__main__":
         X_val, X_test, prices_val, prices_test = timeseries_train_test_split(X_val, prices_val, train_ratio=0.5) 
 
         X_train, prices_train = create_rolling_window_ts(features=X_train, 
-                                                        target=prices_train,
-                                                        num_timesteps_in=num_timesteps_in,
-                                                        num_timesteps_out=num_timesteps_out,
-                                                        fix_start=fix_start)
+                                                         target=prices_train,
+                                                         num_timesteps_in=num_timesteps_in,
+                                                         num_timesteps_out=num_timesteps_out,
+                                                         fix_start=fix_start,
+                                                         drop_last=drop_last)
 
         # define data loaders
         train_loader = data.DataLoader(data.TensorDataset(X_train, prices_train), shuffle=train_shuffle, batch_size=batch_size, drop_last=drop_last)
@@ -77,7 +88,7 @@ if __name__ == "__main__":
                      batch_first=True)
 
         # (2) loss fucntion
-        lossfn = SharpeLoss()
+        lossfn = AvgDD()
         
         (X_batch, prices_batch) = next(iter(train_loader))
                     

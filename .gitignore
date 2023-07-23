@@ -1,5 +1,7 @@
 # data
 src/data/inputs/new_etfs/*
+src/data/outputs/*/*.pt
+src/data/outputs/*/*.csv
 
 #vscode
 .DS_store

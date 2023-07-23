@@ -2,22 +2,22 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-class SharpeLoss(nn.Module):
+class PositiveRetRatio(nn.Module):
     def __init__(self):
         super().__init__()
 
-    def forward(self, prices, weights, ascent=True, annualize=True):
+    def forward(self, prices, weights, ascent=True):
         
         # asset returns
-        asset_returns = torch.diff(torch.log(prices), dim=1 if prices.dim() == 3 else 0)
+        asset_returns = torch.diff(torch.log(prices), dim=1)
 
         # portfolio returns
         portfolio_returns = torch.mul(weights, asset_returns)
 
-        # portfolio sharpe
-        sharpe_ratio = (torch.mean(portfolio_returns) / torch.std(portfolio_returns)) * (np.sqrt(252) if annualize else 1)
+        # portfolio ratio of days with positive return
+        positive_ret_ratio = (portfolio_returns > 0).sum() / (portfolio_returns.shape[0] * portfolio_returns.shape[1] * portfolio_returns.shape[2])
 
-        return sharpe_ratio * (-1 if ascent else 1), asset_returns
+        return positive_ret_ratio * (-1 if ascent else 1)
     
 DEBUG = False
 
@@ -77,7 +77,7 @@ if __name__ == "__main__":
                      batch_first=True)
 
         # (2) loss fucntion
-        lossfn = SharpeLoss()
+        lossfn = PositiveRetRatio()
         
         (X_batch, prices_batch) = next(iter(train_loader))
                     
