@@ -18,16 +18,16 @@ class CRSPSimple(object):
     """
     
     def __init__(self,
-                 use_last_data: bool = True,
-                 use_first_50_names: bool=True,
-                 fields=["close"],
-                 years=["2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021"]):
+                 use_sample_data: bool = True,
+                 fields: list=["close"],
+                 all_years: bool = False,
+                 years: list=["2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021"]):
         super().__init__()
 
         self.inputs_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "inputs")
-        self.use_last_data = use_last_data
-        self.use_first_50_names = use_first_50_names
+        self.use_sample_data = use_sample_data
         self.fields = fields
+        self.all_years = all_years
         self.years = years
 
         self._read_data(years=self.years, fields=self.fields)
@@ -36,13 +36,15 @@ class CRSPSimple(object):
     def _read_data(self,
                    fields: list,
                    years: list):
+        
+        if self.all_years:
+            years = os.listdir(os.path.join(self.inputs_path, "crsp"))
+            years = [val for val in years if val != ".DS_Store"]
+            years.sort()
 
-        if self.use_last_data:
-            
-            if self.use_first_50_names:
-                crsp_df = pd.read_csv(os.path.join(self.inputs_path, "crsp-new-top50.csv"))
-            else:
-                crsp_df = pd.read_csv(os.path.join(self.inputs_path, "crsp-new.csv"))
+        if self.use_sample_data:
+    
+            crsp_df = pd.read_csv(os.path.join(self.inputs_path, "crsp_simple_sample.csv"))
 
             crsp_df["date"] = pd.to_datetime(crsp_df["date"])
             crsp_df.set_index("date", inplace=True)
@@ -69,7 +71,9 @@ class CRSPSimple(object):
             crsp_df = crsp_df.sort_index().dropna(axis=1, how="any")
             crsp_df.index.name = "date"
 
-            crsp_df.to_csv(os.path.join(self.inputs_path, "etfs-new.csv"))
+            # check if file exists
+            if not os.path.exists(os.path.join(self.inputs_path, "crsp_simple_sample.csv")):
+                crsp_df.iloc[:, 0:50].to_csv(os.path.join(self.inputs_path, "crsp_simple_sample.csv"))
 
         # compute returns and subset data
         returns = np.log(crsp_df).diff().dropna()
@@ -109,8 +113,11 @@ class CRSPSimple(object):
         self.returns = returns
         self.prices = prices
     
-DEBUG = True
+DEBUG = False
 
 if __name__ == "__main__":
     if DEBUG:
-        loader = CRSP(use_first_50_names=False, use_last_data=False)
+        loader = CRSPSimple(use_sample_data=False,
+                            fields=["close"],
+                            all_years=True,
+                            years=["2011", "2012", "2013", "2014", "2015", "2016"])
