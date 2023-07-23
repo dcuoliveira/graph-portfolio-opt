@@ -11,16 +11,19 @@ class AverageDD(nn.Module):
     def forward(self, returns, ascent=False):
         
         # cummualitive portfolio returns
-        cummulative_portfolio_returns = torch.cumsum((1 + returns), dim=0)
+        cummulative_portfolio_returns = torch.exp(torch.cumsum(returns, dim=0))
 
         # rolling max value
         rolling_max = torch.cummax(cummulative_portfolio_returns, dim=0)[0]
+
+        # ensure the drawdown is zero for the first element
+        rolling_max[0] = 1.0
 
         # drawdown
         drawdown = (cummulative_portfolio_returns - rolling_max) / rolling_max
 
         # max. drawdown
-        avg_drawdown = torch.mean(drawdown)
+        avg_drawdown = torch.mean(drawdown) * 100
 
         return avg_drawdown * (-1 if ascent else 1)
     

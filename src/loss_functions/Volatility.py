@@ -11,7 +11,7 @@ class Volatility(nn.Module):
     def forward(self, returns, ascent=False, annualize=True):
     
         # portfolio realized volatility
-        volatility = torch.std(returns) * (np.sqrt(252) if annualize else 1)
+        volatility = torch.std(returns) * (np.sqrt(252) if annualize else 1) * 100
 
         return volatility * (-1 if ascent else 1)
     

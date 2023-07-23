@@ -11,7 +11,7 @@ class ExpectedRet(nn.Module):
     def forward(self, returns, ascent=False, annualize=True):
 
         # portfolio average realized returns
-        expected_return = torch.mean(returns) * (252 if annualize else 1)
+        expected_return = torch.mean(returns) * (252 if annualize else 1) * 100
 
         return expected_return * (-1 if ascent else 1)
     
