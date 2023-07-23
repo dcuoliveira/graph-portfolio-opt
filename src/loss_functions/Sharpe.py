@@ -2,18 +2,18 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-class Volatility(nn.Module):
+class Sharpe(nn.Module):
     def __init__(self):
         super().__init__()
 
-        self.name = "Std(R)"
+        self.name = "Sharpe"
 
     def forward(self, returns, ascent=False, annualize=True):
-    
-        # portfolio realized volatility
-        volatility = torch.std(returns) * (np.sqrt(252) if annualize else 1)
+        
+        # portfolio sharpe
+        sharpe_ratio = (torch.mean(returns) / torch.std(returns)) * (np.sqrt(252) if annualize else 1)
 
-        return volatility * (-1 if ascent else 1)
+        return sharpe_ratio * (-1 if ascent else 1)
     
 DEBUG = False
 
@@ -73,7 +73,7 @@ if __name__ == "__main__":
                      batch_first=True)
 
         # (2) loss fucntion
-        lossfn = Volatility()
+        lossfn = SharpeLoss()
         
         (X_batch, prices_batch) = next(iter(train_loader))
                     
