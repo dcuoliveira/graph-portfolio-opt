@@ -6,7 +6,7 @@ import json
 from tqdm import tqdm
 
 from models.MD import MD
-from data.CRSP import CRSP
+from data.CRSPSimple import CRSPSimple
 from utils.dataset_utils import create_rolling_window_ts
 from loss_functions.SharpeLoss import SharpeLoss
 
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     inputs_path = os.path.join(source_path, "data", "inputs")
 
     # prepare dataset
-    loader = CRSP(use_last_data=True, use_first_50_etfs=True)
+    loader = CRSPSimple(use_last_data=True, use_first_50_etfs=True)
     prices = loader.prices.T
     returns = loader.returns.T
     features = loader.features

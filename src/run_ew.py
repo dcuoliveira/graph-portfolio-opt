@@ -5,7 +5,7 @@ import argparse
 import json
 
 from models.EW import EW
-from data.CRSP import CRSP
+from data.CRSPSimple import CRSPSimple
 
 parser = argparse.ArgumentParser()
 
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     inputs_path = os.path.join(source_path, "data", "inputs")
 
     # prepare dataset
-    loader = CRSP(use_last_data=True, use_first_50_etfs=True)
+    loader = CRSPSimple(use_last_data=True, use_first_50_etfs=True)
     prices = loader.prices.T
     returns = loader.returns.T
     features = loader.features

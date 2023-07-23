@@ -9,7 +9,7 @@ import json
 from utils.dataset_utils import create_online_rolling_window_ts, timeseries_train_test_split_online
 from loss_functions.SharpeLoss import SharpeLoss
 from models.DLPO import DLPO
-from data.CRSP import CRSP
+from data.CRSPSimple import CRSPSimple
 
 parser = argparse.ArgumentParser()
 
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     inputs_path = os.path.join(source_path, "data", "inputs")
 
     # prepare dataset
-    loader = CRSP(use_last_data=True, use_first_50_etfs=True)
+    loader = CRSPSimple(use_last_data=True, use_first_50_etfs=True)
     prices = loader.prices.T
     returns = loader.returns.T
     features = loader.features
