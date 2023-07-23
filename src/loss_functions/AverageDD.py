@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-class AvgDD(nn.Module):
+class AverageDD(nn.Module):
     def __init__(self):
         super().__init__()
 
