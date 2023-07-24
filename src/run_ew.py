@@ -10,19 +10,23 @@ from data.CRSPSimple import CRSPSimple
 parser = argparse.ArgumentParser()
 
 parser.add_argument('-mn', '--model_name', type=str, help='model name to be used for saving the model', default="ew")
+parser.add_argument('-usd', '--use_sample_data', type=bool, help='use sample stocks data', default=False)
+parser.add_argument('-ay', '--all_years', type=bool, help='use all years to build dataset', default=True)
 
 if __name__ == "__main__":
 
     args = parser.parse_args()
 
     model_name = args.model_name
+    use_sample_data = args.use_sample_data
+    all_years = args.all_years
 
     # relevant paths
     source_path = os.path.dirname(__file__)
     inputs_path = os.path.join(source_path, "data", "inputs")
 
     # prepare dataset
-    loader = CRSPSimple(use_sample_data=True, all_years=False)
+    loader = CRSPSimple(use_sample_data=use_sample_data, all_years=all_years)
     prices = loader.prices.T
     returns = loader.returns.T
     features = loader.features

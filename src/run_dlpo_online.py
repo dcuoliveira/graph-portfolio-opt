@@ -19,6 +19,8 @@ parser.add_argument('-nti', '--num_timesteps_in', type=int, help='size of the lo
 parser.add_argument('-nto', '--num_timesteps_out', type=int, help='size of the lookforward window to be predicted', default=1)
 parser.add_argument('-ts', '--train_shuffle', type=bool, help='block shuffle train data', default=False)
 parser.add_argument('-mn', '--model_name', type=str, help='model name to be used for saving the model', default="dlpoo")
+parser.add_argument('-usd', '--use_sample_data', type=bool, help='use sample stocks data', default=False)
+parser.add_argument('-ay', '--all_years', type=bool, help='use all years to build dataset', default=True)
 
 if __name__ == "__main__":
 
@@ -45,13 +47,15 @@ if __name__ == "__main__":
     ascent = True
     fix_start=False
     train_shuffle = args.train_shuffle
+    use_sample_data = args.use_sample_data
+    all_years = args.all_years
 
     # relevant paths
     source_path = os.path.dirname(__file__)
     inputs_path = os.path.join(source_path, "data", "inputs")
 
     # prepare dataset
-    loader = CRSPSimple(use_sample_data=True, all_years=False)
+    loader = CRSPSimple(use_sample_data=use_sample_data, all_years=all_years)
     prices = loader.prices.T
     returns = loader.returns.T
     features = loader.features
