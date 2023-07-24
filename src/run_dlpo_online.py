@@ -27,8 +27,8 @@ if __name__ == "__main__":
     model_name = args.model_name
 
     # neural network hyperparameters
-    input_size = 49
-    output_size = 49
+    input_size = 50
+    output_size = 50
     hidden_size = 64
     num_layers = 1
 
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     inputs_path = os.path.join(source_path, "data", "inputs")
 
     # prepare dataset
-    loader = CRSPSimple(use_last_data=True, use_first_50_etfs=True)
+    loader = CRSPSimple(use_sample_data=True, all_years=False)
     prices = loader.prices.T
     returns = loader.returns.T
     features = loader.features
@@ -189,3 +189,5 @@ if __name__ == "__main__":
                                                                                                         num_timesteps_in=num_timesteps_in,
                                                                                                         num_timesteps_out=num_timesteps_out)
     torch.save(results, os.path.join(output_path, output_name))
+
+    summary_df.to_csv(os.path.join(output_path, "summary.csv"), index=False)
