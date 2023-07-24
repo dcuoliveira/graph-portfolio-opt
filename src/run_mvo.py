@@ -32,7 +32,7 @@ if __name__ == "__main__":
     inputs_path = os.path.join(source_path, "data", "inputs")
 
     # prepare dataset
-    loader = CRSPSimple(use_last_data=True, use_first_50_etfs=True)
+    loader = CRSPSimple(use_sample_data=True, all_years=False, years=[2010, 2011, 2012, 2013, 2014, 2015, 2016])
     prices = loader.prices.T
     returns = loader.returns.T
     features = loader.features
