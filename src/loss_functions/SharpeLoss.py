@@ -6,16 +6,17 @@ class SharpeLoss(nn.Module):
     def __init__(self):
         super().__init__()
 
-    def forward(self, prices, weights, ascent=True, annualize=True):
+    def forward(self, prices, weights, ascent=True, annualize=False):
         
         # asset returns
-        asset_returns = torch.diff(torch.log(prices), dim=1 if prices.dim() == 3 else 0)
+        #asset_returns = torch.diff(torch.log(prices), dim=1 if prices.dim() == 3 else 0)
+        asset_returns = torch.diff(torch.log(prices), dim=1)
 
         # portfolio returns
         portfolio_returns = torch.mul(weights, asset_returns)
 
         # portfolio sharpe
-        sharpe_ratio = (torch.mean(portfolio_returns) / torch.std(portfolio_returns)) * (np.sqrt(252) if annualize else 1)
+        sharpe_ratio = (portfolio_returns.mean() / portfolio_returns.std()) * (np.sqrt(252) if annualize else 1)
 
         return sharpe_ratio * (-1 if ascent else 1), asset_returns
     

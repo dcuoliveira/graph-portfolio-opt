@@ -146,7 +146,7 @@ class CRSPLoader(object):
         self,
         data: DataFrame,
     ) -> Tensor:
-        out_tensor = torch.ones(1, self.num_nodes**2, dtype=torch.float)
+        out_tensor = torch.zeros(1, self.num_nodes**2, dtype=torch.float)
         for ticker_index in range(self.num_nodes - 1):
             for bottom_index in range(ticker_index + 1, self.num_nodes):
                 ticker1 = self.rev_ticker_index[ticker_index]
