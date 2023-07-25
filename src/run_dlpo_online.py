@@ -10,6 +10,7 @@ from utils.dataset_utils import create_online_rolling_window_ts, timeseries_trai
 from loss_functions.SharpeLoss import SharpeLoss
 from models.DLPO import DLPO
 from data.CRSPSimple import CRSPSimple
+from utils.conn_data import save_pickle
 
 parser = argparse.ArgumentParser()
 
@@ -19,8 +20,9 @@ parser.add_argument('-nti', '--num_timesteps_in', type=int, help='size of the lo
 parser.add_argument('-nto', '--num_timesteps_out', type=int, help='size of the lookforward window to be predicted', default=1)
 parser.add_argument('-ts', '--train_shuffle', type=bool, help='block shuffle train data', default=False)
 parser.add_argument('-mn', '--model_name', type=str, help='model name to be used for saving the model', default="dlpoo")
-parser.add_argument('-usd', '--use_sample_data', type=bool, help='use sample stocks data', default=False)
-parser.add_argument('-ay', '--all_years', type=bool, help='use all years to build dataset', default=True)
+parser.add_argument('-usd', '--use_sample_data', type=bool, help='use sample stocks data', default=True)
+parser.add_argument('-ay', '--all_years', type=bool, help='use all years to build dataset', default=False)
+parser.add_argument('-lo', '--long_only', type=bool, help='use all years to build dataset', default=False)
 
 if __name__ == "__main__":
 
@@ -49,6 +51,9 @@ if __name__ == "__main__":
     train_shuffle = args.train_shuffle
     use_sample_data = args.use_sample_data
     all_years = args.all_years
+    long_only = args.long_only
+
+    model_name = "{model_name}_lo".format(model_name=model_name) if long_only else "{model_name}_ls".format(model_name=model_name)
 
     # relevant paths
     source_path = os.path.dirname(__file__)
@@ -110,7 +115,7 @@ if __name__ == "__main__":
             for X_batch, prices_batch in train_loader:
                         
                 # compute forward propagation
-                weights_t1 = model.forward(X_batch[None, :, :])
+                weights_t1 = model.forward(X_batch[None, :, :], long_only=long_only)
 
                 # compute loss
                 loss, returns = lossfn(prices=prices_batch[-(num_timesteps_out + 1):], weights=weights_t1, ascent=ascent)
@@ -177,7 +182,6 @@ if __name__ == "__main__":
                                     "outputs",
                                     model_name)
 
-    # check if dir exists
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
@@ -187,11 +191,5 @@ if __name__ == "__main__":
         json.dump(args_dict, fp)
 
     # save results
-    output_name = "{model_name}_{epochs}_{batch_size}_{num_timesteps_in}_{num_timesteps_out}.pt".format(model_name=model_name,
-                                                                                                        epochs=epochs,
-                                                                                                        batch_size=batch_size,
-                                                                                                        num_timesteps_in=num_timesteps_in,
-                                                                                                        num_timesteps_out=num_timesteps_out)
-    torch.save(results, os.path.join(output_path, output_name))
-
+    save_pickle(obj=results, path=os.path.join(output_path, "results.pickle"))
     summary_df.to_csv(os.path.join(output_path, "summary.csv"), index=False)
