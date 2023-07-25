@@ -6,18 +6,19 @@ import json
 
 from models.EW import EW
 from data.CRSPSimple import CRSPSimple
+from utils.conn_data import save_pickle
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument('-mn', '--model_name', type=str, help='model name to be used for saving the model', default="ew")
-parser.add_argument('-usd', '--use_sample_data', type=bool, help='use sample stocks data', default=False)
-parser.add_argument('-ay', '--all_years', type=bool, help='use all years to build dataset', default=True)
+parser.add_argument('-usd', '--use_sample_data', type=bool, help='use sample stocks data', default=True)
+parser.add_argument('-ay', '--all_years', type=bool, help='use all years to build dataset', default=False)
 
 if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    model_name = args.model_name
+    model_name = "{}_lo".format(args.model_name)
     use_sample_data = args.use_sample_data
     all_years = args.all_years
 
@@ -63,7 +64,6 @@ if __name__ == "__main__":
                                     "outputs",
                                     model_name)
 
-    # check if dir exists
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
@@ -73,7 +73,5 @@ if __name__ == "__main__":
         json.dump(args_dict, fp)
 
     # save results
-    output_name = "{model_name}.pt".format(model_name=model_name)
-    torch.save(results, os.path.join(output_path, output_name))
-
+    save_pickle(obj=results, path=os.path.join(output_path, "results.pickle"))
     summary_df.to_csv(os.path.join(output_path, "summary.csv"), index=False)
