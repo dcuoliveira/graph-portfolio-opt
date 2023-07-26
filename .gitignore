@@ -1,5 +1,5 @@
 # data
-src/data/inputs/crsp/*
+src/data/inputs/US_CRSP_NYSE/*
 
 #vscode
 .DS_store
