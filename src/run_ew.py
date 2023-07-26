@@ -11,8 +11,8 @@ from utils.conn_data import save_pickle
 parser = argparse.ArgumentParser()
 
 parser.add_argument('-mn', '--model_name', type=str, help='model name to be used for saving the model', default="ew")
-parser.add_argument('-usd', '--use_sample_data', type=bool, help='use sample stocks data', default=True)
-parser.add_argument('-ay', '--all_years', type=bool, help='use all years to build dataset', default=False)
+parser.add_argument('-usd', '--use_sample_data', type=bool, help='use sample stocks data', default=False)
+parser.add_argument('-ay', '--all_years', type=bool, help='use all years to build dataset', default=True)
 
 if __name__ == "__main__":
 
