@@ -38,7 +38,7 @@ class CRSPSimple(object):
                    years: list):
         
         if self.all_years:
-            years = os.listdir(os.path.join(self.inputs_path, "crsp"))
+            years = os.listdir(os.path.join(self.inputs_path, "US_CRSP_NYSE"))
             years = [val for val in years if val != ".DS_Store"]
             years.sort()
 
@@ -52,7 +52,7 @@ class CRSPSimple(object):
 
             crsp = []
             for y in tqdm(years, total=len(years), desc="Loading All CRSP Data"):
-                files = glob.glob(os.path.join(self.inputs_path , "crsp", y, "*.csv.gz"))
+                files = glob.glob(os.path.join(self.inputs_path , "US_CRSP_NYSE", y, "*.csv.gz"))
 
                 for f in files:
                     tmp_df = pd.read_csv(f,
