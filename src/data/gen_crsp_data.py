@@ -52,7 +52,7 @@ def main():
 
     parser.add_argument('-tk', '--token', type=str, help='access token to be generated', default=None)
     parser.add_argument('-sy', '--start_year', type=int, help='start year of the crsp data', default=2000)
-    parser.add_argument('-ey', '--end_start', type=int, help='end year of the crsp data', default=2021)
+    parser.add_argument('-ey', '--end_year', type=int, help='end year of the crsp data', default=2021)
 
     args = parser.parse_args()
 
