@@ -19,7 +19,7 @@ parser.add_argument('-bs', '--batch_size', type=int, help='size of the batches f
 parser.add_argument('-nti', '--num_timesteps_in', type=int, help='size of the lookback window for the time series data', default=252)
 parser.add_argument('-nto', '--num_timesteps_out', type=int, help='size of the lookforward window to be predicted', default=1)
 parser.add_argument('-ts', '--train_shuffle', type=bool, help='block shuffle train data', default=False)
-parser.add_argument('-mn', '--model_name', type=str, help='model name to be used for saving the model', default="dlpoo")
+parser.add_argument('-mn', '--model_name', type=str, help='model name to be used for saving the model', default="dlpo")
 parser.add_argument('-usd', '--use_sample_data', type=bool, help='use sample stocks data', default=True)
 parser.add_argument('-ay', '--all_years', type=bool, help='use all years to build dataset', default=False)
 parser.add_argument('-lo', '--long_only', type=bool, help='use all years to build dataset', default=False)
@@ -133,7 +133,7 @@ if __name__ == "__main__":
         with torch.no_grad():
 
             # compute forward propagation
-            weights_t1 = model.forward(X_test_t[None, :, :])
+            weights_t1 = model.forward(X_test_t[None, :, :], long_only=long_only)
 
             # compute loss
             loss, returns = lossfn(prices=prices_test_t1[-(num_timesteps_out + 1):], weights=weights_t1, ascent=ascent)
