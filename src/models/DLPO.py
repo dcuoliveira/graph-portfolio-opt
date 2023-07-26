@@ -75,25 +75,26 @@ class DLPO(nn.Module):
         pred_end = -1
         o2t = o2t[:, pred_start:pred_end, :]
 
-        # apply softmax function to respect the contraint $w_i \in [0, 1]$
-        wt = torch.zeros((o2t.shape[0], o2t.shape[1], o2t.shape[2]))
-        for i in range(wt.shape[0]):
+        wts = []
+        for i in range(o2t.shape[0]):
             if long_only:
-                wt[i, :, :] = self.softmax(o2t[i, :, :])
+                wts.append(self.softmax(o2t[i, :, :]))
             else:
                 wt_star = self.tanh(o2t[i, :, :])
 
-                wt_pos_sum = wt_star[wt_star > 0].sum()
-                wt_neg_sum = wt_star[wt_star < 0].sum()
+                pos_mask = (wt_star > 0)
+                neg_mask = (wt_star < 0)
 
-                for j in range(wt_star.shape[1]):
-                    if wt_star[:, j] > 0:
-                        wt_star[:, j] = wt_star[:, j] / wt_pos_sum
-                    elif wt_star[:, j] < 0:
-                        wt_star[:, j] = (wt_star[:, j] / wt_neg_sum) * -1
-                    else:
-                        wt_star[:, j] = 0
+                wt_star_pos = wt_star * pos_mask.float()
+                wt_star_neg = wt_star * neg_mask.float()
 
-                wt[i, :, :] = wt_star
+                wt_star_pos_sum = wt_star_pos.sum()
+                wt_star_neg_sum = wt_star_neg.sum()
+
+                wt_star = wt_star_pos / (wt_star_pos_sum + 1e-9) - wt_star_neg / (wt_star_neg_sum + 1e-9)
+
+                wts.append(wt_star)
+
+        wt = torch.stack(wts, dim=0)
 
         return wt
