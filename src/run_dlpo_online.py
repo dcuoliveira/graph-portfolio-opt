@@ -31,8 +31,8 @@ if __name__ == "__main__":
     model_name = args.model_name
 
     # neural network hyperparameters
-    input_size = 50
-    output_size = 50
+    input_size = 695
+    output_size = 695
     hidden_size = 64
     num_layers = 1
 
