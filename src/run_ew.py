@@ -23,18 +23,16 @@ if __name__ == "__main__":
 
     args = parse_args()
 
-    model_name = "{}_lo".format(args.model_name)
-    use_sample_data = args.use_sample_data
     all_years = args.all_years
 
-    print(use_sample_data, all_years)
+    print(args.use_sample_data, args.all_years)
 
     # relevant paths
     source_path = os.path.dirname(__file__)
     inputs_path = os.path.join(source_path, "data", "inputs")
 
     # prepare dataset
-    loader = CRSPSimple(use_sample_data=use_sample_data, all_years=all_years)
+    loader = CRSPSimple(use_sample_data=args.use_sample_data, all_years=args.all_years)
     prices = loader.prices.T
     returns = loader.returns.T
     features = loader.features
@@ -69,6 +67,6 @@ if __name__ == "__main__":
     output_path = os.path.join(os.path.dirname(__file__),
                                 "data",
                                 "outputs",
-                                model_name)
+                                "{}_lo".format(args.model_name))
     
     save_result_in_blocks(results=results, args=args, path=output_path)
