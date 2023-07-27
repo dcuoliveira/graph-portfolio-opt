@@ -3,6 +3,7 @@ import json
 import pickle
 import pandas as pd
 import bz2
+from tqdm import tqdm
 
 def save_result_in_blocks(results, args, path):
 
@@ -16,7 +17,7 @@ def save_result_in_blocks(results, args, path):
 
     years = list(pd.Series([dtref.year for dtref in results["summary"]["date"]]).unique())
 
-    for y in years:
+    for y in tqdm(years, total=len(years), desc="Saving Results"):
         
         tmp_results = {
 
