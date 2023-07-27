@@ -2,6 +2,7 @@ import os
 import json
 import pickle
 import pandas as pd
+import bz2
 
 def save_result_in_blocks(results, args, path):
 
@@ -40,7 +41,7 @@ def save_result_in_blocks(results, args, path):
 def save_pickle(path: str,
                 obj: dict):
 
-    with open(path, 'wb') as handle:
+    with bz2.BZ2File(path,'wb') as handle:
         pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 def load_pickle(path: str):
