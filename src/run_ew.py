@@ -8,22 +8,15 @@ from models.EW import EW
 from data.CRSPSimple import CRSPSimple
 from utils.conn_data import save_result_in_blocks
 
-def parse_args():
-    parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser()
 
-    parser.add_argument('--model_name', type=str, help='model name to be used for saving the model', default="ew")
-    parser.add_argument('--use_sample_data', type=bool, help='use sample stocks data', default=False)
-    parser.add_argument('--all_years', type=bool, help='use all years to build dataset', default=True)
-
-    args = parser.parse_args()
-
-    return args
+parser.add_argument('--model_name', type=str, help='model name to be used for saving the model', default="ew")
+parser.add_argument('--use_sample_data', type=bool, help='use sample stocks data', default=False)
+parser.add_argument('--all_years', type=bool, help='use all years to build dataset', default=True)
 
 if __name__ == "__main__":
 
-    args = parse_args()
-
-    all_years = args.all_years
+    args = parser.parse_args()
 
     print(args.use_sample_data, args.all_years)
 

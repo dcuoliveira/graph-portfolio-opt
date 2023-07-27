@@ -11,23 +11,18 @@ from utils.dataset_utils import create_rolling_window_ts
 from loss_functions.SharpeLoss import SharpeLoss
 from utils.conn_data import save_result_in_blocks
 
-def parse_args():
-    parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser()
 
-    parser.add_argument('-mn', '--model_name', type=str, help='model name to be used for saving the model', default="md")
-    parser.add_argument('-nti', '--num_timesteps_in', type=int, help='size of the lookback window for the time series data', default=252 * 3)
-    parser.add_argument('-nto', '--num_timesteps_out', type=int, help='size of the lookforward window to be predicted', default=1)
-    parser.add_argument('-usd', '--use_sample_data', type=bool, help='use sample stocks data', default=False)
-    parser.add_argument('-ay', '--all_years', type=bool, help='use all years to build dataset', default=True)
-    parser.add_argument('-lo', '--long_only', type=bool, help='use all years to build dataset', default=False)
-
-    args = parser.parse_args()
-
-    return args
+parser.add_argument('-mn', '--model_name', type=str, help='model name to be used for saving the model', default="md")
+parser.add_argument('-nti', '--num_timesteps_in', type=int, help='size of the lookback window for the time series data', default=252 * 3)
+parser.add_argument('-nto', '--num_timesteps_out', type=int, help='size of the lookforward window to be predicted', default=1)
+parser.add_argument('-usd', '--use_sample_data', type=bool, help='use sample stocks data', default=False)
+parser.add_argument('-ay', '--all_years', type=bool, help='use all years to build dataset', default=True)
+parser.add_argument('-lo', '--long_only', type=bool, help='use all years to build dataset', default=False)
 
 if __name__ == "__main__":
 
-    args = parse_args()
+    args = parser.parse_args()
 
     model_name = args.model_name
     train_ratio = 0.6
