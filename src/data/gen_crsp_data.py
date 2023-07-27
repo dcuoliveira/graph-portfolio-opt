@@ -62,7 +62,7 @@ def main():
     years = [str(y) for y in range(args.start_year, args.end_year)]
 
     # check if exists
-    local_path = os.path.join(os.getcwd(), "inputs", "US_CRSP_NYSE")
+    local_path = os.path.join(os.path.dirname(__file__), "inputs", "US_CRSP_NYSE")
     if not os.path.exists(local_path):
         os.makedirs(local_path)
 
