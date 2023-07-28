@@ -34,7 +34,7 @@ if __name__ == "__main__":
     # neural network hyperparameters
     input_size = 664
     output_size = 664
-    hidden_size = 800
+    hidden_size = input_size * 2
     num_layers = 1
 
     # optimization hyperparameters
