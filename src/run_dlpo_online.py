@@ -11,6 +11,7 @@ from loss_functions.SharpeLoss import SharpeLoss
 from models.DLPO import DLPO
 from data.CRSPSimple import CRSPSimple
 from utils.conn_data import save_pickle
+from utils.conn_data import save_result_in_blocks
 
 parser = argparse.ArgumentParser()
 
@@ -181,15 +182,5 @@ if __name__ == "__main__":
                                     "data",
                                     "outputs",
                                     model_name)
-
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
-
-    # save args
-    args_dict = vars(args)  
-    with open(os.path.join(output_path, 'args.json'), 'w') as fp:
-        json.dump(args_dict, fp)
-
-    # save results
-    save_pickle(obj=results, path=os.path.join(output_path, "results.pickle"))
-    summary_df.to_csv(os.path.join(output_path, "summary.csv"), index=False)
+    
+    save_result_in_blocks(results=results, args=args, path=output_path)
