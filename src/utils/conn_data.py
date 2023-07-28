@@ -10,7 +10,7 @@ def save_csv_result_in_blocks(df, args, path):
     if not os.path.exists(path):
         os.makedirs(path)
 
-    years = list(pd.Series([dtref.year for dtref in df["date"]]).unique())
+    years = list(pd.Series([dtref.dt.year for dtref in df["date"]]).unique())
 
     for y in tqdm(years, total=len(years), desc="Saving Results"):
         
