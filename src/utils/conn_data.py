@@ -5,6 +5,30 @@ import pandas as pd
 import bz2
 from tqdm import tqdm
 
+def save_csv_result_in_blocks(df, args, path):
+
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    years = list(pd.Series([dtref.year for dtref in df["date"]]).unique())
+
+    for y in tqdm(years, total=len(years), desc="Saving Results"):
+        
+        tmp_results = {
+
+            "train_loss": None,
+            "eval_loss": None,
+            "test_loss": None,
+            "returns": None,
+            "weights": None,
+            "summary": df.loc[df["date"].dt.year == y]
+
+        } 
+
+        # save results
+        save_pickle(obj=tmp_results, path=os.path.join(path, "results_{}.pickle".format(y)))
+        tmp_results["summary"].to_csv(os.path.join(path, "summary_{}.csv".format(y)), index=False)
+
 def save_result_in_blocks(results, args, path):
 
     if not os.path.exists(path):
@@ -31,7 +55,7 @@ def save_result_in_blocks(results, args, path):
         } 
 
         # save results
-        save_pickle(obj=results, path=os.path.join(path, "results_{}.pickle".format(y)))
+        save_pickle(obj=tmp_results, path=os.path.join(path, "results_{}.pickle".format(y)))
         tmp_results["summary"].to_csv(os.path.join(path, "summary_{}.csv".format(y)), index=False)
 
     if results["test_loss"] is not None:
