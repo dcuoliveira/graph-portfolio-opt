@@ -31,12 +31,6 @@ if __name__ == "__main__":
 
     model_name = args.model_name
 
-    # neural network hyperparameters
-    input_size = 664
-    output_size = 664
-    hidden_size = input_size * 2
-    num_layers = 1
-
     # optimization hyperparameters
     learning_rate = 1e-3
 
@@ -73,6 +67,12 @@ if __name__ == "__main__":
                                                             num_timesteps_out=num_timesteps_out,
                                                             fix_start=fix_start,
                                                             drop_last=drop_last)
+
+    # neural network hyperparameters
+    input_size = prices.shape[1]
+    output_size = prices.shape[1]
+    hidden_size = 64
+    num_layers = 1
 
     # (1) model
     model = DLPO(input_size=input_size,
