@@ -18,7 +18,7 @@ parser.add_argument('-nti', '--num_timesteps_in', type=int, help='size of the lo
 parser.add_argument('-nto', '--num_timesteps_out', type=int, help='size of the lookforward window to be predicted', default=1)
 parser.add_argument('-usd', '--use_sample_data', type=bool, help='use sample stocks data', default=False)
 parser.add_argument('-ay', '--all_years', type=bool, help='use all years to build dataset', default=True)
-parser.add_argument('-lo', '--long_only', type=bool, help='use all years to build dataset', default=False)
+parser.add_argument('-lo', '--long_only', type=bool, help='use all years to build dataset', default=True)
 
 if __name__ == "__main__":
 
