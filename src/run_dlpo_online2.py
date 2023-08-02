@@ -20,6 +20,7 @@ parser.add_argument('-bs', '--batch_size', type=int, help='size of the batches f
 parser.add_argument('-nti', '--num_timesteps_in', type=int, help='size of the lookback window for the time series data', default=252 * 3)
 parser.add_argument('-nto', '--num_timesteps_out', type=int, help='size of the lookforward window to be predicted', default=1)
 parser.add_argument('-ts', '--train_shuffle', type=bool, help='block shuffle train data', default=False)
+parser.add_argument('--train_ratio', type=int, default=0.7, help='ratio of the data to consider as training')
 parser.add_argument('-mn', '--model_name', type=str, help='model name to be used for saving the model', default="dlpo2")
 parser.add_argument('-usd', '--use_sample_data', type=bool, help='use sample stocks data', default=False)
 parser.add_argument('-ay', '--all_years', type=bool, help='use all years to build dataset', default=True)
@@ -44,6 +45,7 @@ if __name__ == "__main__":
     ascent = True
     fix_start=False
     train_shuffle = args.train_shuffle
+    train_ratio = args.train_ratio
     use_sample_data = args.use_sample_data
     all_years = args.all_years
     long_only = args.long_only
@@ -101,7 +103,7 @@ if __name__ == "__main__":
 
         X_train_t, X_test_t, prices_train_t1, prices_test_t1 = timeseries_train_test_split_online(X=X_t,
                                                                                                   y=prices_t1,
-                                                                                                  test_size=num_timesteps_out)
+                                                                                                  train_ratio=train_ratio)
         
         train_loader = data.DataLoader(data.TensorDataset(X_train_t, prices_train_t1),
                                        shuffle=train_shuffle,
