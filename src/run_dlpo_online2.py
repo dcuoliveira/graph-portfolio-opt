@@ -24,7 +24,7 @@ parser.add_argument('--train_ratio', type=int, default=0.7, help='ratio of the d
 parser.add_argument('-mn', '--model_name', type=str, help='model name to be used for saving the model', default="dlpo2")
 parser.add_argument('-usd', '--use_sample_data', type=bool, help='use sample stocks data', default=False)
 parser.add_argument('-ay', '--all_years', type=bool, help='use all years to build dataset', default=True)
-parser.add_argument('-lo', '--long_only', type=bool, help='use all years to build dataset', default=True)
+parser.add_argument('-lo', '--long_only', type=bool, help='use all years to build dataset', default=False)
 
 if __name__ == "__main__":
 
