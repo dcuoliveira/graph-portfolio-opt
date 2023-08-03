@@ -1,13 +1,13 @@
 import pandas as pd
 import torch
 
-def timeseries_train_test_split_online(X, y, test_size):
-    T = (X.shape[0] - test_size)
+def timeseries_train_test_split_online(X, y, train_ratio):
+    train_size = int(X.shape[0] * train_ratio)
 
-    X_train = X[:T, :]
-    y_train = y[:T, :]
-    X_test = X[:T, :]
-    y_test = y[(T-1):, :]
+    X_train = X[:train_size, :]
+    y_train = y[:train_size, :]
+    X_test = X[train_size:, :]
+    y_test = y[(train_size-1):, :]
 
     return X_train, X_test, y_train, y_test
 

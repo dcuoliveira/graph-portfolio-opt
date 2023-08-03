@@ -26,6 +26,7 @@ dependencies:
   - openpyxl
   - ipywidgets
   - cvxopt
+  - dropbox
   - pip:
     - torch-geometric
     - torch-geometric-temporal
