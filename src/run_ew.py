@@ -25,7 +25,7 @@ if __name__ == "__main__":
     inputs_path = os.path.join(source_path, "data", "inputs")
     model_name = "{}_lo".format(args.model_name)
 
-    model_name = "{}_sample" if args.use_sample_data else model_name
+    model_name = "{}_sample".format(model_name) if args.use_sample_data else model_name
 
     # prepare dataset
     loader = CRSPSimple(use_sample_data=args.use_sample_data, all_years=args.all_years)
