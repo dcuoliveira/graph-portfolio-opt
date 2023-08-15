@@ -22,8 +22,8 @@ class MD(Estimators):
 
     def objective(self, weights):
    
-        portfolio_volatility = np.sqrt(weights.T @ self.cov_t @ weights)
-        weighted_volatilities = weights.T @ self.vol_t
+        portfolio_volatility = np.sqrt(np.dot(weights, np.dot(self.cov_t, weights)))
+        weighted_volatilities = np.dot(weights.T, self.vol_t)
         diversification_ratio = - weighted_volatilities / portfolio_volatility
         return diversification_ratio
 
