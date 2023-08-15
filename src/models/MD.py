@@ -53,7 +53,7 @@ class MD(Estimators):
                 {'type': 'eq', 'fun': lambda x: np.sum(x) - 0},  # the weights sum to zero
                 {'type': 'eq', 'fun': lambda x: np.sum(np.abs(x)) - 1}  # the sum of absolute weights is one
             ]
-            bounds = None
+            bounds = [(-1, 1) for _ in range(N)]
 
         # initial guess for the weights (equal distribution)
         w0 = np.repeat(1 / N, N)

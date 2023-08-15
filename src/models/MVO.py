@@ -56,7 +56,7 @@ class MVO(Estimators):
 
         if long_only:
             constraints = [
-                {'type': 'eq', 'fun': lambda x: np.sum(x) - 1}  # The weights sum to one
+                {'type': 'eq', 'fun': lambda x: np.sum(x) - 1}  # the weights sum to one
             ]
             bounds = [(0, None) for _ in range(N)]
         else:
@@ -64,7 +64,7 @@ class MVO(Estimators):
                 {'type': 'eq', 'fun': lambda x: np.sum(x) - 0},  # the weights sum to zero
                 {'type': 'eq', 'fun': lambda x: np.sum(np.abs(x)) - 1}  # the sum of absolute weights is one
             ]
-            bounds = None
+            bounds = [(-1, 1) for _ in range(N)]
 
         # initial guess for the weights
         x0 = np.ones(N) / N
