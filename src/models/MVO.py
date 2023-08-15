@@ -51,7 +51,7 @@ class MVO(Estimators):
 
         # define the objective function
         def objective(weights):
-            return np.dot(mu_t, weights) - ((self.risk_aversion) * np.dot(weights,np.dot(cov_t, weights)))
+            return np.dot(mu_t, weights) - ((self.risk_aversion) * np.dot(weights, np.dot(cov_t, weights)))
 
         if long_only:
             constraints = [
