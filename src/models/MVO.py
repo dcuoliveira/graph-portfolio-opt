@@ -49,9 +49,9 @@ class MVO(Estimators):
         else:
             raise NotImplementedError
 
-        # Define the objective function (negative Sharpe Ratio)
+        # define the objective function
         def objective(weights):
-            return -np.dot(mu_t, weights) / np.sqrt(np.dot(weights, np.dot(cov_t, weights)))
+            return np.dot(mu_t, weights) - ((self.risk_aversion) * np.dot(weights,np.dot(cov_t, weights)))
 
         if long_only:
             constraints = [
@@ -68,7 +68,7 @@ class MVO(Estimators):
         # initial guess for the weights
         x0 = np.ones(N) / N
 
-        # Perform the optimization
+        # perform the optimization
         opt_output = opt.minimize(objective, x0, constraints=constraints, bounds=bounds, method='SLSQP')
         wt = torch.tensor(np.array(opt_output.x)).T.repeat(num_timesteps_out, 1)
 
