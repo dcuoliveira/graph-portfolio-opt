@@ -112,13 +112,11 @@ if __name__ == "__main__":
         }
 
     output_path = os.path.join(os.path.dirname(__file__),
-                                    "data",
-                                    "outputs",
-                                    model_name)
-
-    output_path = os.path.join(os.path.dirname(__file__),
-                                "data",
-                                "outputs",
-                                model_name)
+                               "data",
+                               "outputs",
+                               args.model_name)
+    
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
     
     save_result_in_blocks(results=results, args=args, path=output_path)
