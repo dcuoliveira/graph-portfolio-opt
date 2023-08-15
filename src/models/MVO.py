@@ -30,6 +30,11 @@ class MVO(Estimators):
         self.mean_estimator = mean_estimator
         self.covariance_estimator = covariance_estimator
 
+    def objective(self,
+                  weights):
+        
+        return np.dot(self.mu_t, weights) - ((self.risk_aversion) * np.dot(weights, np.dot(self.cov_t, weights)))
+
     def forward(self,
                 returns: torch.Tensor,
                 num_timesteps_out: int,
@@ -39,19 +44,15 @@ class MVO(Estimators):
 
         # mean estimator
         if self.mean_estimator == "mle":
-            mu_t = self.MLEMean(returns)
+            self.mu_t = self.MLEMean(returns)
         else:
             raise NotImplementedError
 
         # covariance estimator
         if self.covariance_estimator == "mle":
-            cov_t = self.MLECovariance(returns)
+            self.cov_t = self.MLECovariance(returns)
         else:
             raise NotImplementedError
-
-        # define the objective function
-        def objective(weights):
-            return np.dot(mu_t, weights) - ((self.risk_aversion) * np.dot(weights, np.dot(cov_t, weights)))
 
         if long_only:
             constraints = [
@@ -69,7 +70,7 @@ class MVO(Estimators):
         x0 = np.ones(N) / N
 
         # perform the optimization
-        opt_output = opt.minimize(objective, x0, constraints=constraints, bounds=bounds, method='SLSQP')
+        opt_output = opt.minimize(self.objective, x0, constraints=constraints, bounds=bounds, method='SLSQP')
         wt = torch.tensor(np.array(opt_output.x)).T.repeat(num_timesteps_out, 1)
 
         return wt
