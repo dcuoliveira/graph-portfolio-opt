@@ -1,5 +1,21 @@
+import glob as glob
+import os
 import pandas as pd
 import torch
+
+def aggregate_results(path):
+    files = glob.glob(os.path.join(path, "*.csv"))
+
+    all_summary = []
+    for f in files:
+        summary = pd.read_csv(f)
+
+        all_summary.append(summary)
+    
+    all_summary_df = pd.concat(all_summary)
+    all_summary_df.sort_values("date", inplace=True)
+
+    return all_summary_df.reset_index(drop=True)
 
 def timeseries_train_test_split_online(X, y, train_ratio):
     train_size = int(X.shape[0] * train_ratio)
