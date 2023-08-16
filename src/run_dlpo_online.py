@@ -4,13 +4,11 @@ import torch.utils.data as data
 import torch
 from tqdm import tqdm
 import argparse
-import json
 
 from utils.dataset_utils import create_online_rolling_window_ts, timeseries_train_test_split_online
 from loss_functions.SharpeLoss import SharpeLoss
 from models.DLPO import DLPO
 from data.CRSPSimple import CRSPSimple
-from utils.conn_data import save_pickle
 from utils.conn_data import save_result_in_blocks
 
 parser = argparse.ArgumentParser()
@@ -52,6 +50,7 @@ if __name__ == "__main__":
 
     model_name = "{model_name}_lo".format(model_name=model_name) if long_only else "{model_name}_ls".format(model_name=model_name)
     model_name = "{}_sample".format(model_name) if args.use_sample_data else model_name
+    model_name = "{}_shuffle".format(model_name) if args.train_shuffle else model_name
 
     # relevant paths
     source_path = os.path.dirname(__file__)
@@ -74,7 +73,7 @@ if __name__ == "__main__":
     # neural network hyperparameters
     input_size = prices.shape[1]
     output_size = prices.shape[1]
-    hidden_size = 64
+    hidden_size = input_size * 6
     num_layers = 1
 
     # (1) model
