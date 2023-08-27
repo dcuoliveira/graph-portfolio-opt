@@ -28,6 +28,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    print("Running script with the following parameters: model_name: {}, use_sample_data: {}, all_years: {}, long_only: {}".format(args.model_name, args.use_sample_data, args.all_years, args.long_only))
+
     model_name = args.model_name
 
     # optimization hyperparameters
@@ -47,8 +49,6 @@ if __name__ == "__main__":
     use_sample_data = args.use_sample_data
     all_years = args.all_years
     long_only = args.long_only
-
-    print(use_sample_data, all_years, long_only)
 
     model_name = "{model_name}_lo".format(model_name=model_name) if long_only else "{model_name}_ls".format(model_name=model_name)
     model_name = "{}_sample".format(model_name) if args.use_sample_data else model_name
