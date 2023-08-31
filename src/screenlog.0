@@ -1,0 +1,16 @@
+Steps: 720, Train sharpe : 40.54151, Test sharpe : 0.71133:  39%|██████████████▋                       | 719/1856 [119:48:36<194:28:29, 615.75s/it]Steps: 719, Train sharpe : 40.54151, Test sharpe : 0.71133:  39%|██████████████▋                       | 720/1856 [119:48:36<194:15:02, 615.58s/it]^CSteps: 719, Train sharpe : 40.54151, Test sharpe : 0.71133:  39%|██████████████▋                       | 720/1856 [119:51:42<189:06:55, 599.31s/it]
+Traceback (most recent call last):
+  File "/home/danielco/Downloads/graph-portfolio-opt/src/run_dlpo_online.py", line 131, in <module>
+    optimizer.step()
+  File "/home/danielco/miniconda3/lib/python3.9/site-packages/torch/optim/optimizer.py", line 280, in wrapper
+    out = func(*args, **kwargs)
+  File "/home/danielco/miniconda3/lib/python3.9/site-packages/torch/optim/optimizer.py", line 33, in _use_grad
+    ret = func(self, *args, **kwargs)
+  File "/home/danielco/miniconda3/lib/python3.9/site-packages/torch/optim/adam.py", line 141, in step
+    adam(
+  File "/home/danielco/miniconda3/lib/python3.9/site-packages/torch/optim/adam.py", line 281, in adam
+    func(params,
+  File "/home/danielco/miniconda3/lib/python3.9/site-packages/torch/optim/adam.py", line 391, in _single_tensor_adam
+    denom = (exp_avg_sq.sqrt() / bias_correction2_sqrt).add_(eps)
+KeyboardInterrupt
+^C^C^C^C
