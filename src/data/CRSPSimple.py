@@ -124,5 +124,5 @@ if __name__ == "__main__":
     if DEBUG:
         loader = CRSPSimple(use_sample_data=False,
                             fields=["close"],
-                            all_years=True,
-                            years=["2011", "2012", "2013", "2014", "2015", "2016"])
+                            all_years=False,
+                            years=["2016"])
