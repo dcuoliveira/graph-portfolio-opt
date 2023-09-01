@@ -186,9 +186,9 @@ class CRSPLoader(object):
         cat_feat_names = ['SICCD',
                           ]
         all_feats = []
-        dates = data['date'].unique()
-        pbar = tqdm(dates, total=len(dates))
-        self.num_dates = len(dates)
+        self.dates = data['date'].unique()
+        pbar = tqdm(self.dates, total=len(self.dates))
+        self.num_dates = len(self.dates)
         for date in pbar:
             # Get data from current date
             cur_data = data[data['date'] == date]
