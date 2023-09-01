@@ -6,10 +6,10 @@ class SharpeLoss(nn.Module):
     def __init__(self):
         super().__init__()
 
-    def forward(self, prices, weights, ascent=True, annualize=True):
+    def forward(self, returns, weights, ascent=True, annualize=True):
         
         # asset returns
-        asset_returns = torch.diff(torch.log(prices), dim=0)
+        asset_returns = returns.copy()
 
         # portfolio returns
         portfolio_returns = torch.mul(weights, asset_returns)
