@@ -72,8 +72,8 @@ class CRSPSimple(object):
             ## drop duplicates
             crsp_df = crsp_df.loc[~crsp_df.index.duplicated(keep='first')]
 
-            ## resample (business days) and forward fill
-            crsp_df = crsp_df.resample("B").ffill()
+            ## resample (business days) and fill with zero
+            crsp_df = crsp_df.resample("B").last().fillna(0)
             
             crsp_df.index.name = "date"
 
