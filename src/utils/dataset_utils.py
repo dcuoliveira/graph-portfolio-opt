@@ -112,7 +112,7 @@ def create_rolling_window_ts(target, features, num_timesteps_in, num_timesteps_o
     window_features, window_target = [], []
     for i, j in indices:
         window_features.append(features[i:j, :])
-        window_target.append(target[(j - 1):(j + num_timesteps_out), :])
+        window_target.append(target[j:(j + num_timesteps_out), :])
 
     if drop_last:
         window_features = window_features[:-1]
