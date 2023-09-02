@@ -60,21 +60,20 @@ if __name__ == "__main__":
 
     # prepare dataset
     loader = CRSPSimple(use_sample_data=use_sample_data, all_years=all_years)
-    prices = loader.prices.T
     returns = loader.returns.T
     features = loader.features
     features = features.reshape(features.shape[0], features.shape[1] * features.shape[2]).T  
 
-    X_steps, prices_steps = create_online_rolling_window_ts(features=features, 
-                                                            target=prices,
-                                                            num_timesteps_in=num_timesteps_in,
-                                                            num_timesteps_out=num_timesteps_out,
-                                                            fix_start=fix_start,
-                                                            drop_last=drop_last)
+    X_steps, returns_steps = create_online_rolling_window_ts(features=features, 
+                                                             target=returns,
+                                                             num_timesteps_in=num_timesteps_in,
+                                                             num_timesteps_out=num_timesteps_out,
+                                                             fix_start=fix_start,
+                                                             drop_last=drop_last)
 
     # neural network hyperparameters
-    input_size = prices.shape[1]
-    output_size = prices.shape[1]
+    input_size = returns.shape[1]
+    output_size = returns.shape[1]
     hidden_size = input_size * 6
     num_layers = 1
 
@@ -101,13 +100,13 @@ if __name__ == "__main__":
     pbar = tqdm(range(X_steps.shape[0]-1), total=(X_steps.shape[0] + 1))
     for step in pbar:
         X_t = X_steps[step, :, :]
-        prices_t1 = prices_steps[step, :, :]
+        returns_t1 = returns_steps[step, :, :]
 
-        X_train_t, X_test_t, prices_train_t1, prices_test_t1 = timeseries_train_test_split_online(X=X_t,
-                                                                                                  y=prices_t1,
-                                                                                                  train_ratio=train_ratio)
+        X_train_t, X_test_t, returns_train_t1, returns_test_t1 = timeseries_train_test_split_online(X=X_t,
+                                                                                                    y=returns_t1,
+                                                                                                    train_ratio=train_ratio)
         
-        train_loader = data.DataLoader(data.TensorDataset(X_train_t, prices_train_t1),
+        train_loader = data.DataLoader(data.TensorDataset(X_train_t, returns_train_t1),
                                        shuffle=train_shuffle,
                                        batch_size=batch_size,
                                        drop_last=drop_last)
@@ -117,13 +116,13 @@ if __name__ == "__main__":
 
             # train/validate model
             model.train()
-            for X_batch, prices_batch in train_loader:
+            for X_batch, returns_batch in train_loader:
                         
                 # compute forward propagation
                 weights_t1 = model.forward(X_batch[None, :, :], long_only=long_only)
 
                 # compute loss
-                loss, returns = lossfn(prices=prices_batch[-(num_timesteps_out + 1):], weights=weights_t1, ascent=ascent)
+                loss = lossfn(returns=returns_batch[-num_timesteps_out:], weights=weights_t1, ascent=ascent)
                 train_loss_vals += loss.detach().item() * -1
 
                 # compute gradients and backpropagate
@@ -141,12 +140,12 @@ if __name__ == "__main__":
             weights_t1 = model.forward(X_test_t[None, :, :], long_only=long_only)
 
             # compute loss
-            loss, returns = lossfn(prices=prices_test_t1[-(num_timesteps_out + 1):], weights=weights_t1, ascent=ascent)
+            loss = lossfn(prices=returns_test_t1[-num_timesteps_out:], weights=weights_t1, ascent=ascent)
             eval_loss_vals = loss.detach().item() * -1
 
             # save results
             test_weights[step, :, :] = weights_t1
-            test_returns[step, :, :] = returns
+            test_returns[step, :, :] = returns_test_t1[-num_timesteps_out:]
 
         train_loss[step, :] = avg_train_loss_vals
         test_loss[step, :] = eval_loss_vals
