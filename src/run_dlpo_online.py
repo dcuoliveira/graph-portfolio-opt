@@ -140,7 +140,7 @@ if __name__ == "__main__":
             weights_t1 = model.forward(X_test_t[None, :, :], long_only=long_only)
 
             # compute loss
-            loss = lossfn(prices=returns_test_t1[-num_timesteps_out:], weights=weights_t1, ascent=ascent)
+            loss = lossfn(returns=returns_test_t1[-num_timesteps_out:], weights=weights_t1, ascent=ascent)
             eval_loss_vals = loss.detach().item() * -1
 
             # save results
