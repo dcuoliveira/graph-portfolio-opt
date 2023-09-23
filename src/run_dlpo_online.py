@@ -74,7 +74,7 @@ if __name__ == "__main__":
     # neural network hyperparameters
     input_size = returns.shape[1]
     output_size = returns.shape[1]
-    hidden_size = input_size * 6
+    hidden_size = input_size * 4
     num_layers = 1
 
     # (1) model
