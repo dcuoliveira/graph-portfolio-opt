@@ -52,14 +52,14 @@ class MD(Estimators):
                 {'type': 'eq', 'fun': lambda x: np.sum(x) - 1}  # The weights sum to one
             ]
             bounds = [(0, None) for _ in range(K)]
+            w0 = np.random.uniform(0, 1, size=K)
         else:
             constraints = [
-                {'type': 'eq', 'fun': lambda x: np.sum(x) - 1},  # the weights sum to zero
+                {'type': 'eq', 'fun': lambda x: np.sum(x) - 0},  # the weights sum to zero
+                {'type': 'eq', 'fun': lambda x: np.sum(np.abs(x)) - 1},  # the weights sum to zero
             ]
-            bounds = [(None, None) for _ in range(K)]
-
-        # initial guess for the weights (equal distribution)
-        w0 = self.random_weights_with_constraints(K=K)
+            bounds = [(-1, 1) for _ in range(K)]
+            w0 = np.random.uniform(-1, 1, size=K)
 
         # perform the optimization
         opt_output = opt.minimize(self.objective, w0, method='SLSQP', bounds=bounds, constraints=constraints)
