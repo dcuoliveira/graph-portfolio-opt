@@ -62,7 +62,7 @@ if __name__ == "__main__":
     inputs_path = os.path.join(source_path, "data", "inputs")
 
     # prepare dataset
-    loader = CRSPSimple(use_sample_data=use_sample_data, all_years=all_years)
+    loader = CRSPSimple(use_small_data=use_sample_data, use_sample_data=use_sample_data, all_years=all_years)
     returns = loader.returns.T
     features = loader.features
     features = features.reshape(features.shape[0], features.shape[1] * features.shape[2]).T  
