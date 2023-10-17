@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 
 class Estimators:
     """
@@ -8,40 +7,6 @@ class Estimators:
     """
     def __init__(self) -> None:
         pass
-
-    def random_weights(self,
-                       K: int) -> torch.Tensor:
-        """
-        Sample random weights from a uniform distribution with the given constraints.
-
-        Args:
-            K (int): number of assets.
-        Returns:
-            weights (torch.tensor): random weights.
-        """
-
-        wt = torch.tensor(np.random.uniform(-2, 2, size=K))
-
-        return wt
-
-
-    def random_weights_with_constraints(self,
-                                        K: int) -> torch.Tensor:
-        """
-        Sample random weights from a uniform distribution with the given constraints.
-
-        Args:
-            K (int): number of assets.
-        Returns:
-            weights (torch.tensor): random weights.
-        """
-
-        wt = torch.tensor(np.random.uniform(-2, 2, size=K))
-
-        wt[wt < 0] = wt[wt < 0] / wt[wt < 0].abs().sum()
-        wt[wt > 0] = wt[wt > 0] / wt[wt < 0].abs().sum()
-
-        return wt
 
     def MLEMean(self,
                 returns: torch.Tensor) -> torch.Tensor:
@@ -74,3 +39,23 @@ class Estimators:
 
         return cov_t
     
+    def MLEUncertainty(self,
+                       T: float,
+                       cov_t: torch.Tensor) -> torch.Tensor:
+        """
+        Method to compute the Maximum Likelihood estimtes of the uncertainty of the returns estimates.
+        This method is used for the Robust Portfolio Optimization problem.
+
+        Args:
+            T (float): number of time steps.
+            cov_t (torch.tensor): covariance tensor.
+
+        Returns:
+            omega_t (torch.tensor): MLE estimates for the uncertainty of the returns estimates.
+        """
+        
+        omega_t = torch.zeros_like(cov_t)
+        cov_t_diag = torch.diagonal(cov_t, 0)/T
+        omega_t.diagonal().copy_(cov_t_diag)
+
+        return omega_t
