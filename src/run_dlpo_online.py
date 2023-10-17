@@ -53,8 +53,15 @@ if __name__ == "__main__":
 
     print("Running script with the following parameters: model_name: {}, use_sample_data: {}, all_years: {}, long_only: {}".format(model_name, use_sample_data, all_years, long_only))
 
+    # add tag for long only or long-short portfolios
     model_name = "{model_name}_lo".format(model_name=model_name) if long_only else "{model_name}_ls".format(model_name=model_name)
+
+    model_name = "{}_small".format(model_name) if use_small_data else model_name
+
+    # add tag for sample data
     model_name = "{}_sample".format(model_name) if use_sample_data else model_name
+
+    # add tag for shuffle of batches    
     model_name = "{}_shuffle".format(model_name) if train_shuffle else model_name
 
     # relevant paths
@@ -172,10 +179,12 @@ if __name__ == "__main__":
     melt_returns_df = returns_df.reset_index().melt("index").rename(columns={"index": "date", "variable": "ticker", "value": "returns"})
     melt_weights_df = weights_df.reset_index().melt("index").rename(columns={"index": "date", "variable": "ticker", "value": "weights"})
     summary_df = pd.merge(melt_returns_df, melt_weights_df, on=["date", "ticker"], how="inner")
-
+    
     results = {
         
         "model": model.state_dict(),
+        "means": None,
+        "covs": None,
         "train_loss": train_loss,
         "test_loss": test_loss,
         "returns": returns_df,

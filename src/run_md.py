@@ -116,6 +116,8 @@ if __name__ == "__main__":
     results = {
         
         "model": model,
+        "means": None,
+        "covs": torch.stack(model.covs),
         "train_loss": None,
         "eval_loss": None,
         "test_loss": test_loss,

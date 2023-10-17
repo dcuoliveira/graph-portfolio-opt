@@ -19,6 +19,7 @@ class MD(Estimators):
         super().__init__()
         
         self.covariance_estimator = covariance_estimator
+        self.covs = list()
 
     def objective(self,
                   weights: torch.Tensor,
@@ -43,7 +44,8 @@ class MD(Estimators):
             cov_t = self.MLECovariance(returns)
         else:
             raise NotImplementedError
-        
+        self.covs.append(self.cov_t)
+
         self.cov_t = cov_t.numpy()
         self.vol_t = torch.sqrt(torch.diag(cov_t))[:, None].numpy()
 
