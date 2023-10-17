@@ -51,7 +51,7 @@ if __name__ == "__main__":
     all_years = check_bool(args.all_years)
     long_only = check_bool(args.long_only)
 
-    print("Running script with the following parameters: model_name: {}, use_sample_data: {}, all_years: {}, long_only: {}".format(model_name, use_sample_data, all_years, long_only))
+    print("Running script with the following parameters: model_name: {}, use_small_data {}, use_sample_data: {}, all_years: {}, long_only: {}".format(model_name, use_small_data, use_sample_data, all_years, long_only))
 
     # add tag for long only or long-short portfolios
     model_name = "{model_name}_lo".format(model_name=model_name) if long_only else "{model_name}_ls".format(model_name=model_name)
