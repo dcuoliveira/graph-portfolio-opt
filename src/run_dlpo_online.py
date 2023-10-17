@@ -10,6 +10,7 @@ from loss_functions.SharpeLoss import SharpeLoss
 from models.DLPO import DLPO
 from data.CRSPSimple import CRSPSimple
 from utils.conn_data import save_result_in_blocks
+from utils.dataset_utils import check_bool
 
 parser = argparse.ArgumentParser()
 
@@ -17,18 +18,17 @@ parser.add_argument('-e', '--epochs', type=int, help='epochs to be used on the t
 parser.add_argument('-bs', '--batch_size', type=int, help='size of the batches for the time seriesd data', default=90)
 parser.add_argument('-nti', '--num_timesteps_in', type=int, help='size of the lookback window for the time series data', default=252 * 3)
 parser.add_argument('-nto', '--num_timesteps_out', type=int, help='size of the lookforward window to be predicted', default=1)
-parser.add_argument('-ts', '--train_shuffle', type=bool, help='block shuffle train data', default=False)
+parser.add_argument('-ts', '--train_shuffle', type=str, help='block shuffle train data', default="False")
 parser.add_argument('--train_ratio', type=int, default=0.7, help='ratio of the data to consider as training')
 parser.add_argument('-mn', '--model_name', type=str, help='model name to be used for saving the model', default="dlpo")
-parser.add_argument('-usd', '--use_sample_data', type=bool, help='use sample stocks data', default=True)
-parser.add_argument('-ay', '--all_years', type=bool, help='use all years to build dataset', default=False)
-parser.add_argument('-lo', '--long_only', type=bool, help='use all years to build dataset', default=False)
+parser.add_argument('--use_small_data', type=str, help='use small sample stocks data', default="True")
+parser.add_argument('-usd', '--use_sample_data', type=str, help='use sample stocks data', default="False")
+parser.add_argument('-ay', '--all_years', type=str, help='use all years to build dataset', default="False")
+parser.add_argument('-lo', '--long_only', type=str, help='consider long only constraint on the optimization', default="False")
 
 if __name__ == "__main__":
 
     args = parser.parse_args()
-
-    print("Running script with the following parameters: model_name: {}, use_sample_data: {}, all_years: {}, long_only: {}".format(args.model_name, args.use_sample_data, args.all_years, args.long_only))
 
     model_name = args.model_name
 
@@ -44,15 +44,18 @@ if __name__ == "__main__":
     num_timesteps_out = args.num_timesteps_out
     ascent = True
     fix_start=False
-    train_shuffle = args.train_shuffle
     train_ratio = args.train_ratio
-    use_sample_data = args.use_sample_data
-    all_years = args.all_years
-    long_only = args.long_only
+    train_shuffle = check_bool(args.train_shuffle)
+    use_small_data = check_bool(args.use_small_data)
+    use_sample_data = check_bool(args.use_sample_data)
+    all_years = check_bool(args.all_years)
+    long_only = check_bool(args.long_only)
+
+    print("Running script with the following parameters: model_name: {}, use_sample_data: {}, all_years: {}, long_only: {}".format(model_name, use_sample_data, all_years, long_only))
 
     model_name = "{model_name}_lo".format(model_name=model_name) if long_only else "{model_name}_ls".format(model_name=model_name)
-    model_name = "{}_sample".format(model_name) if args.use_sample_data else model_name
-    model_name = "{}_shuffle".format(model_name) if args.train_shuffle else model_name
+    model_name = "{}_sample".format(model_name) if use_sample_data else model_name
+    model_name = "{}_shuffle".format(model_name) if train_shuffle else model_name
 
     # relevant paths
     source_path = os.path.dirname(__file__)

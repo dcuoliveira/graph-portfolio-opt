@@ -12,9 +12,9 @@ from utils.dataset_utils import check_bool
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--model_name', type=str, help='model name to be used for saving the model', default="ew")
-parser.add_argument('--use_small_data', type=str, help='use sample stocks data', default="False")
+parser.add_argument('--use_small_data', type=str, help='use sample stocks data', default="True")
 parser.add_argument('--use_sample_data', type=str, help='use sample stocks data', default="False")
-parser.add_argument('--all_years', type=str, help='use all years to build dataset', default="True")
+parser.add_argument('--all_years', type=str, help='use all years to build dataset', default="False")
 
 if __name__ == "__main__":
 
