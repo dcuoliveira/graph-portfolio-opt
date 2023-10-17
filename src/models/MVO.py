@@ -50,18 +50,6 @@ class MVO(Estimators):
         # mean estimator
         if self.mean_estimator == "mle":
             self.mean_t = self.MLEMean(returns)
-        elif (self.mean_estimator == "cbb") or (self.mean_estimator == "nobb") or (self.mean_estimator == "sb"):
-            self.mean_t = self.DependentBootstrapMean(returns=returns,
-                                                      boot_method=self.mean_estimator,
-                                                      Bsize=50,
-                                                      rep=1000)
-        elif self.mean_estimator == "rbb":
-            self.mean_t = self.DependentBootstrapMean(returns=returns,
-                                                    boot_method=self.mean_estimator,
-                                                    Bsize=50,
-                                                    rep=1000,
-                                                    max_p=50,
-                                                    max_q=50)
         else:
             raise NotImplementedError
         self.means.append(self.mean_t[None, :])
@@ -69,18 +57,6 @@ class MVO(Estimators):
         # covariance estimator
         if self.covariance_estimator == "mle":
             self.cov_t = self.MLECovariance(returns)
-        elif (self.mean_estimator == "cbb") or (self.mean_estimator == "nobb") or (self.mean_estimator == "sb"):
-            self.cov_t = self.DependentBootstrapCovariance(returns=returns,
-                                                           boot_method=self.covariance_estimator,
-                                                           Bsize=50,
-                                                           rep=1000)
-        elif self.covariance_estimator == "rbb":
-            self.cov_t = self.DepenBootstrapCovariance(returns=returns,
-                                                       boot_method=self.covariance_estimator,
-                                                       Bsize= 50,
-                                                       rep=1000,
-                                                       max_p= 50,
-                                                       max_q= 50)
         else:
             raise NotImplementedError
         self.covs.append(self.cov_t)
@@ -90,14 +66,14 @@ class MVO(Estimators):
                 {'type': 'eq', 'fun': lambda x: np.sum(x) - 1}  # the weights sum to one
             ]
             bounds = [(0, None) for _ in range(K)]
+            w0 = np.random.uniform(0, 1, size=K)
         else:
             constraints = [
-                {'type': 'eq', 'fun': lambda x: np.sum(x) - 1}  # the weights sum to one
+                {'type': 'eq', 'fun': lambda x: np.sum(x) - 0},  # the weights sum to zero
+                {'type': 'eq', 'fun': lambda x: np.sum(np.abs(x)) - 1},  # the weights sum to zero
             ]
             bounds = [(-1, 1) for _ in range(K)]
-
-        # initial guess for the weights
-        w0 = self.random_weights(K=K)
+            w0 = np.random.uniform(-1, 1, size=K)
 
         # perform the optimization
         opt_output = opt.minimize(self.objective, w0, constraints=constraints, bounds=bounds, method='SLSQP')
