@@ -10,6 +10,7 @@ from data.CRSPSimple import CRSPSimple
 from utils.dataset_utils import create_rolling_window_ts
 from loss_functions.SharpeLoss import SharpeLoss
 from utils.conn_data import save_result_in_blocks
+from utils.dataset_utils import check_bool
 
 parser = argparse.ArgumentParser()
 
@@ -32,10 +33,10 @@ if __name__ == "__main__":
     num_timesteps_out = args.num_timesteps_out
     fix_start = False
     drop_last = True
-    use_sample_data = args.use_sample_data
-    use_small_data = args.use_small_data
-    all_years = args.all_years
-    long_only = args.long_only
+    use_sample_data = check_bool(args.use_sample_data)
+    use_small_data = check_bool(args.use_small_data)
+    all_years = check_bool(args.all_years)
+    long_only = check_bool(args.long_only)
     covariance_estimator = args.covariance_estimator
 
     print("Running script with the following parameters: model_name: {}, use_small_data {}, use_sample_data: {}, all_years: {}, long_only: {}, covariance_estimator: {}".format(model_name, use_small_data, use_sample_data, all_years, long_only, covariance_estimator))
