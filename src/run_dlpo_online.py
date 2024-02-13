@@ -4,14 +4,13 @@ import torch.utils.data as data
 import torch
 from tqdm import tqdm
 import argparse
-import json
 
 from utils.dataset_utils import create_online_rolling_window_ts, timeseries_train_test_split_online
 from loss_functions.SharpeLoss import SharpeLoss
 from models.DLPO import DLPO
 from data.CRSPSimple import CRSPSimple
-from utils.conn_data import save_pickle
 from utils.conn_data import save_result_in_blocks
+from utils.dataset_utils import check_bool
 
 parser = argparse.ArgumentParser()
 
@@ -19,12 +18,13 @@ parser.add_argument('-e', '--epochs', type=int, help='epochs to be used on the t
 parser.add_argument('-bs', '--batch_size', type=int, help='size of the batches for the time seriesd data', default=90)
 parser.add_argument('-nti', '--num_timesteps_in', type=int, help='size of the lookback window for the time series data', default=252 * 3)
 parser.add_argument('-nto', '--num_timesteps_out', type=int, help='size of the lookforward window to be predicted', default=1)
-parser.add_argument('-ts', '--train_shuffle', type=bool, help='block shuffle train data', default=False)
+parser.add_argument('-ts', '--train_shuffle', type=str, help='block shuffle train data', default="False")
 parser.add_argument('--train_ratio', type=int, default=0.7, help='ratio of the data to consider as training')
 parser.add_argument('-mn', '--model_name', type=str, help='model name to be used for saving the model', default="dlpo")
-parser.add_argument('-usd', '--use_sample_data', type=bool, help='use sample stocks data', default=False)
-parser.add_argument('-ay', '--all_years', type=bool, help='use all years to build dataset', default=True)
-parser.add_argument('-lo', '--long_only', type=bool, help='use all years to build dataset', default=False)
+parser.add_argument('--use_small_data', type=str, help='use small sample stocks data', default="True")
+parser.add_argument('-usd', '--use_sample_data', type=str, help='use sample stocks data', default="False")
+parser.add_argument('-ay', '--all_years', type=str, help='use all years to build dataset', default="False")
+parser.add_argument('-lo', '--long_only', type=str, help='consider long only constraint on the optimization', default="False")
 
 if __name__ == "__main__":
 
@@ -44,36 +44,47 @@ if __name__ == "__main__":
     num_timesteps_out = args.num_timesteps_out
     ascent = True
     fix_start=False
-    train_shuffle = args.train_shuffle
     train_ratio = args.train_ratio
-    use_sample_data = args.use_sample_data
-    all_years = args.all_years
-    long_only = args.long_only
+    train_shuffle = check_bool(args.train_shuffle)
+    use_small_data = check_bool(args.use_small_data)
+    use_sample_data = check_bool(args.use_sample_data)
+    all_years = check_bool(args.all_years)
+    long_only = check_bool(args.long_only)
 
+    print("Running script with the following parameters: model_name: {}, use_small_data {}, use_sample_data: {}, all_years: {}, long_only: {}".format(model_name, use_small_data, use_sample_data, all_years, long_only))
+
+    # add tag for long only or long-short portfolios
     model_name = "{model_name}_lo".format(model_name=model_name) if long_only else "{model_name}_ls".format(model_name=model_name)
+
+    model_name = "{}_small".format(model_name) if use_small_data else model_name
+
+    # add tag for sample data
+    model_name = "{}_sample".format(model_name) if use_sample_data else model_name
+
+    # add tag for shuffle of batches    
+    model_name = "{}_shuffle".format(model_name) if train_shuffle else model_name
 
     # relevant paths
     source_path = os.path.dirname(__file__)
     inputs_path = os.path.join(source_path, "data", "inputs")
 
     # prepare dataset
-    loader = CRSPSimple(use_sample_data=use_sample_data, all_years=all_years)
-    prices = loader.prices.T
+    loader = CRSPSimple(use_small_data=use_small_data, use_sample_data=use_sample_data, all_years=all_years)
     returns = loader.returns.T
     features = loader.features
     features = features.reshape(features.shape[0], features.shape[1] * features.shape[2]).T  
 
-    X_steps, prices_steps = create_online_rolling_window_ts(features=features, 
-                                                            target=prices,
-                                                            num_timesteps_in=num_timesteps_in,
-                                                            num_timesteps_out=num_timesteps_out,
-                                                            fix_start=fix_start,
-                                                            drop_last=drop_last)
+    X_steps, returns_steps = create_online_rolling_window_ts(features=features, 
+                                                             target=returns,
+                                                             num_timesteps_in=num_timesteps_in,
+                                                             num_timesteps_out=num_timesteps_out,
+                                                             fix_start=fix_start,
+                                                             drop_last=drop_last)
 
     # neural network hyperparameters
-    input_size = prices.shape[1]
-    output_size = prices.shape[1]
-    hidden_size = 64
+    input_size = returns.shape[1]
+    output_size = returns.shape[1]
+    hidden_size = input_size * 4
     num_layers = 1
 
     # (1) model
@@ -99,13 +110,13 @@ if __name__ == "__main__":
     pbar = tqdm(range(X_steps.shape[0]-1), total=(X_steps.shape[0] + 1))
     for step in pbar:
         X_t = X_steps[step, :, :]
-        prices_t1 = prices_steps[step, :, :]
+        returns_t1 = returns_steps[step, :, :]
 
-        X_train_t, X_test_t, prices_train_t1, prices_test_t1 = timeseries_train_test_split_online(X=X_t,
-                                                                                                  y=prices_t1,
-                                                                                                  train_ratio=train_ratio)
+        X_train_t, X_test_t, returns_train_t1, returns_test_t1 = timeseries_train_test_split_online(X=X_t,
+                                                                                                    y=returns_t1,
+                                                                                                    train_ratio=train_ratio)
         
-        train_loader = data.DataLoader(data.TensorDataset(X_train_t, prices_train_t1),
+        train_loader = data.DataLoader(data.TensorDataset(X_train_t, returns_train_t1),
                                        shuffle=train_shuffle,
                                        batch_size=batch_size,
                                        drop_last=drop_last)
@@ -115,13 +126,13 @@ if __name__ == "__main__":
 
             # train/validate model
             model.train()
-            for X_batch, prices_batch in train_loader:
+            for X_batch, returns_batch in train_loader:
                         
                 # compute forward propagation
                 weights_t1 = model.forward(X_batch[None, :, :], long_only=long_only)
 
                 # compute loss
-                loss, returns = lossfn(prices=prices_batch[-(num_timesteps_out + 1):], weights=weights_t1, ascent=ascent)
+                loss = lossfn(returns=returns_batch[-num_timesteps_out:], weights=weights_t1, ascent=ascent)
                 train_loss_vals += loss.detach().item() * -1
 
                 # compute gradients and backpropagate
@@ -139,12 +150,12 @@ if __name__ == "__main__":
             weights_t1 = model.forward(X_test_t[None, :, :], long_only=long_only)
 
             # compute loss
-            loss, returns = lossfn(prices=prices_test_t1[-(num_timesteps_out + 1):], weights=weights_t1, ascent=ascent)
+            loss = lossfn(returns=returns_test_t1[-num_timesteps_out:], weights=weights_t1, ascent=ascent)
             eval_loss_vals = loss.detach().item() * -1
 
             # save results
             test_weights[step, :, :] = weights_t1
-            test_returns[step, :, :] = returns
+            test_returns[step, :, :] = returns_test_t1[-num_timesteps_out:]
 
         train_loss[step, :] = avg_train_loss_vals
         test_loss[step, :] = eval_loss_vals
@@ -168,10 +179,12 @@ if __name__ == "__main__":
     melt_returns_df = returns_df.reset_index().melt("index").rename(columns={"index": "date", "variable": "ticker", "value": "returns"})
     melt_weights_df = weights_df.reset_index().melt("index").rename(columns={"index": "date", "variable": "ticker", "value": "weights"})
     summary_df = pd.merge(melt_returns_df, melt_weights_df, on=["date", "ticker"], how="inner")
-
+    
     results = {
         
         "model": model.state_dict(),
+        "means": None,
+        "covs": None,
         "train_loss": train_loss,
         "test_loss": test_loss,
         "returns": returns_df,

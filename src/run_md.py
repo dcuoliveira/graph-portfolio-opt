@@ -11,6 +11,7 @@ from data.CRSPLoader import CRSPLoader
 from utils.dataset_utils import check_bool
 from loss_functions.SharpeLoss import SharpeLoss
 from utils.conn_data import save_result_in_blocks
+from utils.dataset_utils import check_bool
 
 parser = argparse.ArgumentParser()
 

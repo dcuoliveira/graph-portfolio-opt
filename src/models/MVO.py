@@ -29,6 +29,7 @@ class MVO(Estimators):
         self.risk_aversion = risk_aversion
         self.mean_estimator = mean_estimator
         self.covariance_estimator = covariance_estimator
+
         self.estimated_means = list()
         self.estimated_covs = list()
 
@@ -50,6 +51,7 @@ class MVO(Estimators):
         # mean estimator
         if self.mean_estimator == "mle":
             self.mean_t = self.MLEMean(returns)
+
         elif (self.mean_estimator == "cbb") or (self.mean_estimator == "nobb") or (self.mean_estimator == "sb"):
             self.mean_t = self.DependentBootstrapMean(returns=returns,
                                                       boot_method=self.mean_estimator,
@@ -87,15 +89,8 @@ class MVO(Estimators):
             constraints = [
                 {'type': 'eq', 'fun': lambda x: np.sum(x) - 1}  # the weights sum to one
             ]
-            bounds = [(0, 1) for _ in range(K)]
 
-            w0 = np.random.uniform(0, 1, size=K)
-        else:
-            constraints = [
-                {'type': 'eq', 'fun': lambda x: np.sum(x) - 0},  # the weights sum to zero
-                {'type': 'eq', 'fun': lambda x: np.sum(np.abs(x)) - 1},  # the weights sum to zero
-            ]
-            bounds = [(-1, 1) for _ in range(K)]
+            bounds = [(0, 1) for _ in range(K)]
 
             w0 = np.random.uniform(-1, 1, size=K)
 

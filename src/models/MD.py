@@ -19,13 +19,18 @@ class MD(Estimators):
         super().__init__()
         
         self.covariance_estimator = covariance_estimator
+        self.covs = list()
 
-    def objective(self, weights):
+    def objective(self,
+                  weights: torch.Tensor,
+                  maximize: bool=True) -> torch.Tensor:
+        
+        c = -1 if maximize else 1
    
-        portfolio_volatility = np.sqrt(weights.T @ self.cov_t @ weights)
-        weighted_volatilities = weights.T @ self.vol_t
+        portfolio_volatility = np.sqrt(np.dot(weights, np.dot(self.cov_t, weights)))
+        weighted_volatilities = np.dot(weights.T, self.vol_t)
         diversification_ratio = - weighted_volatilities / portfolio_volatility
-        return diversification_ratio
+        return diversification_ratio * c
 
     def forward(self,
                 returns: torch.Tensor,
@@ -39,7 +44,8 @@ class MD(Estimators):
             cov_t = self.MLECovariance(returns)
         else:
             raise NotImplementedError
-        
+        self.covs.append(cov_t)
+
         self.cov_t = cov_t.numpy()
         self.vol_t = torch.sqrt(torch.diag(cov_t))[:, None].numpy()
 
@@ -47,8 +53,9 @@ class MD(Estimators):
             constraints = [
                 {'type': 'eq', 'fun': lambda x: np.sum(x) - 1}  # the weights sum to one
             ]
-            bounds = [(0, 1) for _ in range(K)]
 
+            bounds = [(0, 1) for _ in range(K)]
+  
             w0 = np.random.uniform(0, 1, size=K)
         else:
             constraints = [
@@ -56,8 +63,6 @@ class MD(Estimators):
                 {'type': 'eq', 'fun': lambda x: np.sum(np.abs(x)) - 1},  # the weights sum to zero
             ]
             bounds = [(-1, 1) for _ in range(K)]
-
-            w0 = np.random.uniform(-1, 1, size=K)
 
         # perform the optimization
         opt_output = opt.minimize(self.objective, w0, method='SLSQP', bounds=bounds, constraints=constraints)

@@ -8,6 +8,7 @@ import torch
 from models.EW import EW
 from data.CRSPLoader import CRSPLoader
 from utils.conn_data import save_result_in_blocks
+from utils.dataset_utils import check_bool
 
 parser = argparse.ArgumentParser()
 
@@ -44,7 +45,6 @@ if __name__ == "__main__":
     dataset = loader.get_dataset(data=loader.select_tickers(tickers=etf_tickers),
                                     window_length=window_length,
                                     step_length=step_length)
-
 
     # call model
     model = EW()
