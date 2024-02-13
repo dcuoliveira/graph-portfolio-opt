@@ -1,5 +1,29 @@
+import glob as glob
+import os
 import pandas as pd
 import torch
+
+def check_bool(str):
+    if str.lower() == "false":
+        return False
+    elif str.lower() == "true": 
+        return True
+    else:
+        raise Exception("Invalid boolean value: {}".format(str))
+
+def aggregate_results(path):
+    files = glob.glob(os.path.join(path, "*.csv"))
+
+    all_summary = []
+    for f in files:
+        summary = pd.read_csv(f)
+
+        all_summary.append(summary)
+    
+    all_summary_df = pd.concat(all_summary)
+    all_summary_df.sort_values("date", inplace=True)
+
+    return all_summary_df.reset_index(drop=True)
 
 def timeseries_train_test_split_online(X, y, train_ratio):
     train_size = int(X.shape[0] * train_ratio)
@@ -95,8 +119,9 @@ def create_rolling_window_ts(target, features, num_timesteps_in, num_timesteps_o
     # use rolling window indices to subset data
     window_features, window_target = [], []
     for i, j in indices:
-        window_features.append(features[i:j, :])
-        window_target.append(target[(j - 1):(j + num_timesteps_out), :])
+
+        window_features.append(features[i:j, :]) # val \in [i, j)
+        window_target.append(target[(j + num_timesteps_out):(j + num_timesteps_out + 1), :]) # val \in [j + num_timesteps_out, j + num_timesteps_out + 1)
 
     if drop_last:
         window_features = window_features[:-1]

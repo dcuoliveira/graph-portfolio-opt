@@ -29,47 +29,78 @@ class MVO(Estimators):
         self.risk_aversion = risk_aversion
         self.mean_estimator = mean_estimator
         self.covariance_estimator = covariance_estimator
+        self.estimated_means = list()
+        self.estimated_covs = list()
+
+    def objective(self,
+                  weights: torch.Tensor,
+                  maximize: bool=True) -> torch.Tensor:
+        
+        c = -1 if maximize else 1
+        
+        return (np.dot(weights, self.mean_t) - ((self.risk_aversion/2) * np.sqrt(np.dot(weights, np.dot(self.cov_t, weights))) )) * c
 
     def forward(self,
                 returns: torch.Tensor,
                 num_timesteps_out: int,
                 long_only: bool=True) -> torch.Tensor:
         
-        N = returns.shape[1]
+        K = returns.shape[1]
 
         # mean estimator
         if self.mean_estimator == "mle":
-            mu_t = self.MLEMean(returns)
+            self.mean_t = self.MLEMean(returns)
+        elif (self.mean_estimator == "cbb") or (self.mean_estimator == "nobb") or (self.mean_estimator == "sb"):
+            self.mean_t = self.DependentBootstrapMean(returns=returns,
+                                                      boot_method=self.mean_estimator,
+                                                      Bsize=50,
+                                                      rep=1000)
+        elif self.mean_estimator == "rbb":
+            self.mean_t = self.DependentBootstrapMean(returns=returns,
+                                                    boot_method=self.mean_estimator,
+                                                    Bsize=50,
+                                                    rep=1000,
+                                                    max_p=4)
         else:
             raise NotImplementedError
+        self.estimated_means.append(self.mean_t[None, :])
 
         # covariance estimator
         if self.covariance_estimator == "mle":
-            cov_t = self.MLECovariance(returns)
+            self.cov_t = self.MLECovariance(returns)
+        elif (self.mean_estimator == "cbb") or (self.mean_estimator == "nobb") or (self.mean_estimator == "sb"):
+            self.cov_t = self.DependentBootstrapCovariance(returns=returns,
+                                                           boot_method=self.covariance_estimator,
+                                                           Bsize=50,
+                                                           rep=1000)
+        elif self.covariance_estimator == "rbb":
+            self.cov_t = self.DepenBootstrapCovariance(returns=returns,
+                                                       boot_method=self.covariance_estimator,
+                                                       Bsize= 50,
+                                                       rep=1000,
+                                                       max_p= 4)
         else:
             raise NotImplementedError
-
-        # Define the objective function (negative Sharpe Ratio)
-        def objective(weights):
-            return -np.dot(mu_t, weights) / np.sqrt(np.dot(weights, np.dot(cov_t, weights)))
+        self.estimated_covs.append(self.cov_t)
 
         if long_only:
             constraints = [
-                {'type': 'eq', 'fun': lambda x: np.sum(x) - 1}  # The weights sum to one
+                {'type': 'eq', 'fun': lambda x: np.sum(x) - 1}  # the weights sum to one
             ]
-            bounds = [(0, None) for _ in range(N)]
+            bounds = [(0, 1) for _ in range(K)]
+
+            w0 = np.random.uniform(0, 1, size=K)
         else:
             constraints = [
                 {'type': 'eq', 'fun': lambda x: np.sum(x) - 0},  # the weights sum to zero
-                {'type': 'eq', 'fun': lambda x: np.sum(np.abs(x)) - 1}  # the sum of absolute weights is one
+                {'type': 'eq', 'fun': lambda x: np.sum(np.abs(x)) - 1},  # the weights sum to zero
             ]
-            bounds = None
+            bounds = [(-1, 1) for _ in range(K)]
 
-        # initial guess for the weights
-        x0 = np.ones(N) / N
+            w0 = np.random.uniform(-1, 1, size=K)
 
-        # Perform the optimization
-        opt_output = opt.minimize(objective, x0, constraints=constraints, bounds=bounds, method='SLSQP')
+        # perform the optimization
+        opt_output = opt.minimize(self.objective, w0, constraints=constraints, bounds=bounds)
         wt = torch.tensor(np.array(opt_output.x)).T.repeat(num_timesteps_out, 1)
 
         return wt
