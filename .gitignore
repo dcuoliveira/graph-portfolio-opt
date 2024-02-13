@@ -1,5 +1,7 @@
 # data
 src/data/inputs/US_CRSP_NYSE/*
+src/data/inputs/US_CRSP_NYSE_master.csv
+src/data/inputs/correlation_networks/*
 
 #vscode
 .DS_store
