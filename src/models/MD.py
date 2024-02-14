@@ -53,9 +53,8 @@ class MD(Estimators):
             constraints = [
                 {'type': 'eq', 'fun': lambda x: np.sum(x) - 1}  # the weights sum to one
             ]
-
             bounds = [(0, 1) for _ in range(K)]
-  
+
             w0 = np.random.uniform(0, 1, size=K)
         else:
             constraints = [
@@ -63,6 +62,8 @@ class MD(Estimators):
                 {'type': 'eq', 'fun': lambda x: np.sum(np.abs(x)) - 1},  # the weights sum to zero
             ]
             bounds = [(-1, 1) for _ in range(K)]
+
+            w0 = np.random.uniform(-1, 1, size=K)
 
         # perform the optimization
         opt_output = opt.minimize(self.objective, w0, method='SLSQP', bounds=bounds, constraints=constraints)
