@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     # prepare dataset
     loader = CRSPLoader(load_data=True,
-                        load_path=os.path.join(os.getcwd(), "src", "data", "inputs"),
+                        load_path=os.path.join(os.getcwd(), "data", "inputs"),
                         load_edge_data=True,
                         num_feat_names=num_feat_names,
                         cat_feat_names=cat_feat_names)
