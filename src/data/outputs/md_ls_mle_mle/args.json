@@ -1,0 +1,1 @@
+{"model_name": "md_ls_mle_mle", "window_length": 50, "step_length": 1, "long_only": "False", "mean_estimator": "mle", "covariance_estimator": "mle", "model": "md"}
