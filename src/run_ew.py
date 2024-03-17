@@ -8,7 +8,7 @@ import torch
 from models.EW import EW
 from data.CRSPLoader import CRSPLoader
 from utils.conn_data import save_result_in_blocks
-from utils.dataset_utils import check_bool
+from loss_functions.SharpeLoss import SharpeLoss
 
 parser = argparse.ArgumentParser()
 
@@ -49,9 +49,13 @@ if __name__ == "__main__":
     # call model
     model = EW()
 
+    # loss fucntion
+    lossfn = SharpeLoss()
+
     # compute weights
     test_weights = torch.zeros((len(loader.dates), loader.num_features, loader.num_tickers))
     returns = torch.zeros((len(loader.dates), loader.num_features, loader.num_tickers))
+    test_loss = torch.zeros((len(loader.dates), step_length))
 
     pbar = tqdm(enumerate(dataset), total=dataset.get_num_batches())
     for step, batch in pbar:
@@ -71,10 +75,13 @@ if __name__ == "__main__":
 
         # compute weights
         weights = model.forward(returns=features[-2:-1, :])
-        test_weights[step, :, :] = weights
-        returns[step, :, :] = target[-2:-1, :] if target.shape[0] > 1 else target
+        returns_t1 = target[-2:-1, :] if target.shape[0] > 1 else target
 
-        loss = torch.tensor(0)
+        loss = lossfn(weights=weights, returns=returns_t1)
+
+        returns[step, :, :] = returns_t1
+        test_weights[step, :, :] = weights
+        test_loss[step, :] = loss.item()
 
         pbar.set_description("Steps: %d, Test sharpe : %1.5f" % (step, loss.item()))
 
@@ -93,7 +100,7 @@ if __name__ == "__main__":
         "covs": None,
         "train_loss": None,
         "eval_loss": None,
-        "test_loss": None,
+        "test_loss": test_loss,
         "returns": returns_df,
         "weights": weights_df,
         "summary": summary_df
