@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 {"model_name": "mvo_lo_mle_mle", "window_length": 50, "step_length": 1, "long_only": "True", "mean_estimator": "mle", "covariance_estimator": "mle", "model": "mvo"}
+=======
+{"model_name": "mvo_lo_mle_mle", "window_length": 252, "step_length": 1, "long_only": "True", "mean_estimator": "mle", "covariance_estimator": "mle", "model": "mvo"}
+>>>>>>> baa8b16 (add md results)
