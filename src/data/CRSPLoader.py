@@ -120,15 +120,15 @@ class CRSPLoader(object):
         ticker_list: Optional[List[str]] = None,
     ):
         if ticker_list is None:
-            cats = self.master_data['ticker'].unique()
+            self.cats = self.master_data['ticker'].unique()
         else :
-            cats = ticker_list
+            self.cats = ticker_list
         self.ticker_index = {}
         self.rev_ticker_index = {}
-        for step, ticker in enumerate(cats):
+        for step, ticker in enumerate(self.cats):
             self.ticker_index[ticker] = step
             self.rev_ticker_index[step] = ticker
-        self.num_nodes = len(cats)
+        self.num_nodes = len(self.cats)
 
     def _update_edge_ticker_index(
         self,
@@ -324,6 +324,9 @@ class CRSPLoader(object):
 
         self.num_timesteps = y.shape[1]
         self.num_features = X.shape[1]
+
+        if X.shape[1] == 1:
+            self.X = pd.DataFrame(y.numpy().T, index=self.dates, columns=self.cats)
 
         return X, y
 
