@@ -63,7 +63,9 @@ class MD(Estimators):
             ]
             bounds = [(-1, 1) for _ in range(K)]
 
-            w0 = np.random.uniform(-1, 1, size=K)
+            w0_1 = np.random.uniform(0, 1, size=int(K/2))
+            w0_2 = np.random.uniform(-1, 0, size=int(K/2))
+            w0 = np.concatenate([w0_1, w0_2])
 
         # perform the optimization
         opt_output = opt.minimize(self.objective, w0, method='SLSQP', bounds=bounds, constraints=constraints)
