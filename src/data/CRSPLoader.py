@@ -197,41 +197,10 @@ class CRSPLoader(object):
 
         if "Unnamed: 0" in data.columns:
             data = data.drop(columns=["Unnamed: 0"])
-
-        resampled_data = []
-        for ticker in data['ticker'].unique():
-            
-            # Subset data to current ticker
-            ticker_data = data[data['ticker'] == ticker]
-
-            # Pivot data
-            ticker_data = ticker_data.pivot_table(index=["date"], columns=["ticker"], values=self.num_feat_names)
-
-            # Drop level 1 of column index
-            ticker_data.columns = ticker_data.columns.droplevel(1)
-
-            # Resample data to business days
-            ticker_data = ticker_data.resample('B').last()
-
-            # Forward fill missing values
-            ticker_data = ticker_data.fillna(method='ffill')
-
-            # Melt data
-            ticker_data = ticker_data.reset_index()
-            ticker_data["ticker"] = ticker
-
-            # Add categorical features
-            ticker_data = pd.merge(ticker_data, data[data['ticker'] == ticker][["date"] + self.cat_feat_names], on="date", how="left")
-
-            resampled_data.append(ticker_data)
-
-        resampled_data = concat(resampled_data)
         
         all_feats = []
-        self.dates = pd.to_datetime(resampled_data['date'].unique())
         first_edge_date = self.edge_data[0][0]
         pbar = tqdm(self.dates, total=len(self.dates))
-        self.num_dates = len(self.dates)
         for date in pbar:
 
             # While no edge data, continue
@@ -239,7 +208,7 @@ class CRSPLoader(object):
                 continue
 
             # Get data from current date
-            cur_data = resampled_data[resampled_data['date'] == date]            
+            cur_data = data[data['date'] == date]            
 
             # Get numerical features
             cur_feat = torch.tensor(cur_data[self.num_feat_names].values, dtype=torch.float)
@@ -285,11 +254,18 @@ class CRSPLoader(object):
             return self.ticker_index[ticker]
         if data is None:
             data = self.master_data
+            data = self.resample_data(data)
+
         num_feat_names = ['pvCLCL']
         all_feats = []
-        dates = data['date'].unique()
-        pbar = tqdm(dates, total=len(dates))
+        first_edge_date = self.edge_data[0][0]
+        pbar = tqdm(self.dates, total=len(self.dates))
         for date in pbar:
+
+            # While no edge data, continue
+            if date <= first_edge_date:
+                continue
+
             # Get data from current date
             cur_data = data[data['date'] == date]
 
@@ -304,8 +280,42 @@ class CRSPLoader(object):
             num_feat[cur_tick_ind, :] = cur_feat
             all_feats.append(num_feat)
 
-        self.dates = dates
         return torch.squeeze(torch.stack(all_feats, dim=2))
+    
+    def resample_data(self, data: DataFrame):
+
+        resampled_data = []
+        for ticker in data['ticker'].unique():
+            
+            # Subset data to current ticker
+            ticker_data = data[data['ticker'] == ticker]
+
+            # Pivot data
+            ticker_data = ticker_data.pivot_table(index=["date"], columns=["ticker"], values=self.num_feat_names)
+
+            # Drop level 1 of column index
+            ticker_data.columns = ticker_data.columns.droplevel(1)
+
+            # Resample data to business days
+            ticker_data = ticker_data.resample('B').last()
+
+            # Forward fill missing values
+            ticker_data = ticker_data.fillna(method='ffill')
+
+            # Melt data
+            ticker_data = ticker_data.reset_index()
+            ticker_data["ticker"] = ticker
+
+            # Add categorical features
+            ticker_data = pd.merge(ticker_data, data[data['ticker'] == ticker][["date"] + self.cat_feat_names], on="date", how="left")
+
+            resampled_data.append(ticker_data)
+
+        resampled_data = concat(resampled_data)
+        self.dates = pd.to_datetime(data['date'].unique())
+        self.num_dates = len(self.dates)
+
+        return resampled_data
 
     def _get_edges_and_weights(
         self,
@@ -319,14 +329,23 @@ class CRSPLoader(object):
         print('Generating CRSP dataset...')
         if data is None:
             data = self.master_data
-        X = self.get_feature_matrix(data)
-        y = self.get_target_matrix(data)
+        resampled_data = self.resample_data(data)
 
-        self.num_timesteps = y.shape[1]
+        # get features and targets
+        X = self.get_feature_matrix(resampled_data)
+        y = self.get_target_matrix(resampled_data)
+
+        # sanity checks
+        if y.shape[0] != X.shape[0]:
+            raise Exception("Inconsistent temporal dimension between X and y.")
+        else:
+            self.num_timesteps = y.shape[1]
+
         self.num_features = X.shape[1]
 
         if X.shape[1] == 1:
-            self.X = pd.DataFrame(y.numpy().T, index=self.dates, columns=self.cats)
+            first_edge_date = self.edge_data[0][0]
+            self.X = pd.DataFrame(y.numpy().T, index=self.dates[self.dates > first_edge_date], columns=self.cats)
 
         return X, y
 
